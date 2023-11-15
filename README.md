@@ -25,3 +25,9 @@ Here are the steps to set up this project:
 8. Save Configuration: Click "save" in the WiFi manager to save your settings.
 
 Please note that the WiFi manager configuration may fail on the first attempt, causing the AP to restart. If this happens, simply repeat the above steps.
+
+
+
+## Contacts
+
+If you got any question, feel free to contact us at [jeremyan@connect.hku.hk](mailto: jeremyan@connect.hku.hk)
