@@ -6,7 +6,7 @@ def get_options():
     
     parser.add_argument('--path', type=str, default='./data/')
     parser.add_argument('--mode', type=str, default='train')
-    parser.add_argument('--save', action='store_ture')
+    parser.add_argument('--save', action='store_true')
     parser.add_argument('--save_path', type=str, default='./save/') 
                         
     kwargs = parser.parse_args()
