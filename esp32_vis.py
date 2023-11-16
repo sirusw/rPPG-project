@@ -4,6 +4,8 @@ import numpy as np
 import scipy.signal
 from PIL import Image
 import paho.mqtt.client as mqtt
+import time
+import os
 
 # MQTT Broker Details
 broker = "192.168.0.106"
@@ -12,17 +14,22 @@ username = "mqtt"
 password = "1234"
 
 # Image Storage Path
-image_path = "/path/to/save/image.jpg"
+file_path = "data/data.txt"
+record_length = 10  # Length of the recording in seconds
 
 buffer_size = 128  # buffer size for the sliding window of frames
 buffer = np.zeros(buffer_size)  # buffer for storing pixel intensity values
+
+# Frame rate calculation variables
+frame_count = 0
+start_time = None
 
 def on_connect(client, userdata, flags, rc):
     print(f"Connected with result code {rc}")
     client.subscribe("/data/tx")
 
 def on_message(client, userdata, msg):
-    global buffer
+    global buffer, frame_count, start_time
     print("Message received!")
 
     # Decode Base64 Image
@@ -34,40 +41,51 @@ def on_message(client, userdata, msg):
     # Convert Numpy Array to Image
     img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-    # Extract the green channel
-    green = img_np[:, :, 1]
+    # Frame rate calculation
+    if start_time is None:
+        start_time = time.time()
+    else:
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        frame_rate = frame_count / elapsed_time
+        start_time = end_time
 
-    # Calculate the average intensity in the green channel
-    intensity = np.mean(green)
-
-    # Add the intensity value to the buffer
-    buffer = np.roll(buffer, -1)
-    buffer[-1] = intensity
-
-    # Apply a bandpass filter to the intensity values in the buffer to extract
-    # the heart rate frequency
-    freqs, psd = scipy.signal.welch(buffer, fs=30, nperseg=buffer_size, noverlap=0, window='hamming', scaling='spectrum')
-    freq_res = freqs[1] - freqs[0]  # calculate frequency resolution
-    heart_rate_freq = freqs[np.argmax(psd[(freqs >= 0.67) & (freqs <= 4.0)])]  # find the peak in the range of human heart rate 
-    heart_rate = heart_rate_freq * 60  # convert from Hz to bpm
-
-    # Display the heart rate on the image
-    cv2.putText(img_np, f"HR: {heart_rate:.2f} bpm", (10, 30), 
-                cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
+        # Append frame rate to the data file
+        with open(file_path, 'a') as file:
+            file.write(f"{frame_rate:.2f} Hz\n")
 
     # Display Image
     cv2.imshow('Received Image', img_np)
     cv2.waitKey(1)  # waits 1 ms and then proceed to next frame
 
-    # Save Image
-    # cv2.imwrite(image_path, img_np)
+    with open(file_path, 'a') as file:
+        file.write(base64.b64encode(imgdata).decode() + '\n')
 
-client = mqtt.Client()
-client.username_pw_set(username, password)
+    # Check if recording length is reached
+    if elapsed_time >= record_length:
+        # Disconnect from MQTT broker
+        client.disconnect()
 
-client.on_connect = on_connect
-client.on_message = on_message
+try:
+    client = mqtt.Client()
+    client.username_pw_set(username, password)
 
-client.connect(broker, port, 60)
+    client.on_connect = on_connect
+    client.on_message = on_message
 
-client.loop_forever()
+    client.connect(broker, port, 60)
+
+    start_time = time.time()
+    client.loop_start()
+
+    # Wait for the recording to complete
+    time.sleep(record_length)
+
+    client.loop_stop()
+    cv2.destroyAllWindows()
+
+except KeyboardInterrupt:
+    # Rename the data file to include the frame rate and recording length
+    frame_rate = frame_count / record_length
+    new_file_path = file_path.replace(".txt", f"_{frame_rate:.2f}Hz_{record_length}second.txt")
+    os.rename(file_path, new_file_path)
