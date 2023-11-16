@@ -16,7 +16,7 @@ Here are the steps to set up this project:
 
 4. Power ESP32: Connect your ESP32 module to power. You may need to press the reset button on the module, depending on your specific module.
 
-5. Connect to AP: On your computer or mobile device, connect to the WiFi network created by the ESP32. This network will be named "ESP32".
+5. Connect to AP: On your computer or mobile device, connect to the WiFi network created by the ESP32. This network will be named "ESP32". A setup page from WiFiManager will pop up upon connection.
 
 6. Configure WiFi: In the WiFi manager, configure the ESP32 to connect to your home WiFi or hotspot. Make sure the WiFi or hotspot is using a 2.4GHz bandwidth.
 
