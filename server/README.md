@@ -11,7 +11,15 @@ pip install -r requirements.txt
 
 2. **Set up Redis** at 127.0.0.1:6379. You'll need to install WSL, then download Redis and run it.
 
-4. Start the Daphne server.
+```bash
+sudo service redis-server start
+```
+
+```bash
+sudo service redis-server status
+```
+
+3. Start the Daphne server.
 
 ```bash
 daphne server.asgi:application
