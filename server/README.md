@@ -9,8 +9,7 @@ This is the backend Django application for receiving MQTT messages, perform face
 pip install -r requirements.txt
 ```
 
-2. Set up Redis
-   Set up Redis at 127.0.0.1:6379. You'll need to install WSL, then download Redis and run it.
+2. **Set up Redis** at 127.0.0.1:6379. You'll need to install WSL, then download Redis and run it.
 
 4. Start the Daphne server.
 
