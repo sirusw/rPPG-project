@@ -48,7 +48,7 @@ function MQTTVideo() {
             {error ? (
                 <div>{error}</div>
             ) : (
-                <img src={videoSrc} style={{ position: 'absolute' }} width="640" height="480" alt="Video Stream" />
+                <img src={videoSrc} width="640" height="480" alt="Video Stream" />
             )}
         </div>
     );

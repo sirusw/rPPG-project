@@ -5,6 +5,16 @@ function DeviceCam() {
     const mediaRecorderRef = useRef();
     const [error, setError] = useState(null);
 
+    function arrayBufferToBase64(buffer) {
+        let binary = '';
+        let bytes = new Uint8Array(buffer);
+        let len = bytes.byteLength;
+        for (let i = 0; i < len; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return window.btoa(binary);
+    }
+
     useEffect(() => {
         const socket = new WebSocket('ws://localhost:8000/ws/video/');
 
@@ -21,7 +31,13 @@ function DeviceCam() {
                 mediaRecorderRef.current = new MediaRecorder(stream);
                 mediaRecorderRef.current.ondataavailable = (event) => {
                     if (event.data && event.data.size > 0) {
-                        socket.send(event.data);
+                        const reader = new FileReader();
+                        reader.readAsArrayBuffer(event.data);
+                        reader.onloadend = function() {
+                            const rawData = reader.result;
+                            const base64Data = arrayBufferToBase64(rawData);
+                            socket.send(base64Data);
+                        }
                     }
                 };
                 mediaRecorderRef.current.start(10); // Start recording, and send data every 10 ms
@@ -51,7 +67,7 @@ function DeviceCam() {
             {error ? (
                 <div>{error}</div>
             ) : (
-                <video ref={videoRef} style={{ position: 'absolute' }} width="640" height="480" autoPlay />
+                <video ref={videoRef} width="640" height="480" autoPlay />
             )}
         </div>
     );

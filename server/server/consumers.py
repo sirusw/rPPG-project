@@ -2,6 +2,8 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 import logging
+import base64
+
 class VideoConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         logging.info("New WebSocket connection")
@@ -24,3 +26,16 @@ class VideoConsumer(AsyncWebsocketConsumer):
             'frame': event['frame'], 
         }))
         return
+    
+    async def receive(self, text_data):
+        # This method is called when the server receives data from the client
+        bytes_data = base64.b64decode(text_data)
+
+        # # You can also send the frame to the group, if necessary
+        # await self.channel_layer.group_send(
+        #     'video',
+        #     {
+        #         'type': 'video.update',
+        #         'frame': text_data
+        #     }
+        # )

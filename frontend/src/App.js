@@ -7,6 +7,7 @@ import { Select, Layout, Menu, theme, Typography } from 'antd';
 import MQTTVideo from './components/MQTTVideo';
 import Config from './components/Config';
 import DeviceCam from './components/DeviceCam';
+import LineChart from './components/LineChart';
 const { Header, Content, Footer } = Layout;
 
 
@@ -63,12 +64,12 @@ const App = () => {
   }
 
   return (
-    <Layout className="layout">
+    <Layout className="layout" style={{height: '100%'}}>
       <Header
         style={{
           display: 'flex',
           alignItems: 'center',
-          height: '5vh'
+          flex: '0 0 auto'
         }}
       >
         <div className="demo-logo" />
@@ -77,6 +78,7 @@ const App = () => {
           mode="horizontal"
           defaultSelectedKeys={['1']}
           disabledOverflow={true}
+          style={{height: 'auto', overflow: 'auto'}}
           items={items}
           onClick={(e) => setSelectedKey(e.key)}
         />
@@ -85,19 +87,30 @@ const App = () => {
         style={{
           padding: '0 50px',
           overflow: 'auto',
-          height: '90vh'
+          flex: '1 0 auto',
+          minHeight: 'calc(100vh - 150px)',
+          display: 'flex',
         }}
       >
           {content}
+          <LineChart style={{margin: 'auto 10px auto auto'}}/>
       </Content>
       <Footer
         style={{
+          display: 'flex',
           textAlign: 'center',
+          justifyContent: 'center',
           height: '5vh',
+          flex: '0 0 auto',
           backgroundColor: colorBgContainer
         }}
       >
-        @2023 Created by Team 11 from COMP7310, HKU
+        <p style={{
+          justifyContent: 'center',
+          display: 'flex',
+          alignItems: 'center'}}>
+            @2023 Created by Team 11 from COMP7310, HKU
+          </p>
       </Footer>
     </Layout>
   );
