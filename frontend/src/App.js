@@ -58,6 +58,7 @@ const App = () => {
         />
       </div>
       {camera === 'device' ? <DeviceCam /> : <MQTTVideo />}
+      <LineChart/>
       </div>;
   } else if(selectedKey === '2') {
     content = <Config />;
@@ -93,7 +94,6 @@ const App = () => {
         }}
       >
           {content}
-          <LineChart style={{margin: 'auto 10px auto auto'}}/>
       </Content>
       <Footer
         style={{
