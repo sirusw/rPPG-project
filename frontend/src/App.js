@@ -38,7 +38,7 @@ const App = () => {
     }
   
     return () => {
-      if (socket && socket.readyState === WebSocket.OPEN) {
+      if (socket) {
         socket.close();
       }
     };

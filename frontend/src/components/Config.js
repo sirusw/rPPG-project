@@ -3,8 +3,8 @@ import { Select, Row, Col, Slider, Switch } from 'antd';
 import { useState, useEffect } from 'react';
 import MQTTVideo from './MQTTVideo';
 import { debounce, set } from 'lodash';
-import sendApiRequest from '../api/api.js';
-const Config = ({socket}) => {
+import { sendApiRequest, sendSyncRequest } from '../api/api.js';
+const Config = ({ socket }) => {
     const [resInput, setResInput] = useState(5);
     const [qualityInput, setQualityInput] = useState(8);
     const [brightnessInput, setBrightnessInput] = useState(0);
@@ -33,21 +33,35 @@ const Config = ({socket}) => {
     const [apiParam, setApiParam] = useState('');
     const [apiValue, setApiValue] = useState('');
 
-    
+
     const handleFormSubmit = async () => {
-    
+
         try {
             console.log(apiParam, apiValue);
-          const data = await sendApiRequest(apiParam, apiValue);
-          
-          // Handle the API response
+            const data = await sendApiRequest(apiParam, apiValue);
+
+            // Handle the API response
         } catch (error) {
-          // Handle any errors
-          console.error(error);
+            // Handle any errors
+            console.error(error);
         }
-      };
-      
+    };
+
     const debouncedApiCall = debounce(handleFormSubmit, 1000);
+
+    // this function syncs the config of camera from the ESP32 to the frontend
+    const syncData = async () => {
+
+        try {
+            const data = await sendSyncRequest();
+            console.log(data);
+
+            // Handle the API response
+        } catch (error) {
+            // Handle any errors
+            console.error(error);
+        }
+    };
 
 
     const updateWsHasData = (hasData) => {
@@ -219,8 +233,12 @@ const Config = ({socket}) => {
             debouncedApiCall(); // Call the API when apiParam or apiValue changes
         return () => {
             debouncedApiCall.cancel();
-            };
-      }, [apiParam, apiValue]);
+        };
+    }, [apiParam, apiValue]);
+
+    useEffect(() => {
+        syncData();
+    }, []);
 
     if (wsHasData) {
         return (
@@ -495,7 +513,7 @@ const Config = ({socket}) => {
                         </Row>
                     </Col>
                     <Col span={12}>
-                        <MQTTVideo updateWsHasData={updateWsHasData} mode={2} socket={socket}/>
+                        <MQTTVideo updateWsHasData={updateWsHasData} mode={2} socket={socket} />
                     </Col>
                 </Row>
             </div>

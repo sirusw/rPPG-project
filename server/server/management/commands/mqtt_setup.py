@@ -5,6 +5,7 @@ import numpy as np
 import paho.mqtt.client as mqtt
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+import json
 
 
 # Load the cascade
@@ -85,13 +86,21 @@ class MQTTClient:
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
         self.client.connect("127.0.0.1", 9001)
-        self.client.loop_forever()
+        self.client.loop_start()
+        self.received_param = {}
 
     def on_connect(self, client, userdata, flags, rc):
         print("Connected to MQTT broker with result code "+str(rc))
         client.subscribe("/data/tx")
+        client.subscribe("/config/tx")
 
     def on_message(self, client, userdata, msg):
+        if msg.topic == "/config/tx":
+            try:
+                self.received_param = json.loads(msg.payload.decode())
+                print(self.received_param)
+            except json.JSONDecodeError:
+                print(f"Invalid JSON: {msg.payload.decode()}")
         frame_base64 = msg.payload.decode('utf-8')
 
         channel_layer = get_channel_layer()

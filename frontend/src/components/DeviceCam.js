@@ -17,19 +17,12 @@ function DeviceCam({socket}) {
     }
 
     useEffect(() => {
-        // const socket = new WebSocket('ws://localhost:8000/ws/video/');
-        if(socket){
-            socket.onopen = () => {
-                console.log('WebSocket Client Connected');
-                startRecording();
-            };
-        }
-        
+        let socketOpened = false;
         const startRecording = () => {
             navigator.mediaDevices.getUserMedia({ video: true })
                 .then(stream => {
                     videoRef.current.srcObject = stream;
-
+    
                     mediaRecorderRef.current = new MediaRecorder(stream);
                     mediaRecorderRef.current.ondataavailable = (event) => {
                         if (event.data && event.data.size > 0) {
@@ -49,17 +42,33 @@ function DeviceCam({socket}) {
                     setError('Cannot access device camera');
                 });
         };
-
+        if(socket != null){
+            socket.onopen = () => {
+                console.log('WebSocket Client Connected');
+                socketOpened = true;
+                startRecording();
+            };
+            socket.onclose = () => {
+                socketOpened = false;
+            };
+            if (socket.readyState === WebSocket.OPEN) {
+                startRecording();
+            }
+        }
+    
+        if (socket && socketOpened) {
+            startRecording();
+        }
+    
         // Clean up the connection and stop the MediaRecorder when the component is unmounted
         return () => {
-            // if (socket.readyState === WebSocket.OPEN) {
-            //     socket.close();
-            // }
             if (mediaRecorderRef.current) {
                 mediaRecorderRef.current.stop();
+                mediaRecorderRef.current = null;
             }
             if (videoRef.current && videoRef.current.srcObject) {
                 videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+                videoRef.current.srcObject = null;
             }
             console.log("DeviceCam unmounted");
         };

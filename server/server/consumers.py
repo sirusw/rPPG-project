@@ -20,7 +20,7 @@ class VideoConsumer(AsyncWebsocketConsumer):
             'video',
             self.channel_name
         )
-        cache.delete(self.room_group_name)
+        cache.delete('video')
 
     async def video_update(self, event):
         await self.send(text_data=json.dumps({
