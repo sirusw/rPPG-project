@@ -16,7 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from .views.config_view import send_mqtt_cmd
+from .views.csrf_view import set_csrf_token
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/config', send_mqtt_cmd, name='send_mqtt_cmd'),
+    path('api/set-csrf-token/', set_csrf_token, name='Set-CSRF-Token'),
 ]

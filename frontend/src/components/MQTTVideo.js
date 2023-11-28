@@ -1,57 +1,81 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef }
+  from 'react';
+import LineChart from './LineChart';
+// mode: 1 for display, 2 for config
+function MQTTVideo({ mode, updateWsHasData, socket }) {
+  const [videoSrc, setVideoSrc] = useState("");
+  const [error, setError] = useState('No connection');
+  const timeoutRef = useRef(null);
 
-function MQTTVideo() {
-    const [videoSrc, setVideoSrc] = useState("");
-    const [error, setError] = useState('No connection');
+  useEffect(() => {
+    // const socket = new WebSocket('ws://localhost:8000/ws/video/');
+    const timeoutDuration = 2000;
 
-    useEffect(() => {
-        const socket = new WebSocket('ws://localhost:8000/ws/video/');
+    if (socket) {
+      socket.onopen = () => {
+        console.log('WebSocket Client Connected');
+        setError('No data');
+      };
 
-        socket.onopen = () => {
-            console.log('WebSocket Client Connected');
+      socket.onerror = (error) => {
+        console.log('WebSocket Error: ', error);
+        setError('No connection');
+      };
+
+      socket.onclose = (event) => {
+        if (!event.wasClean) {
+          setError('No connection');
+        }
+        // updateWsHasData(false);
+      };
+
+      socket.onmessage = (message) => {
+        clearTimeout(timeoutRef.current);
+        const data = JSON.parse(message.data);
+        if (data.type === 'video.update') {
+          if (data.frame) {
+            setVideoSrc('data:image/jpeg;base64,' + data.frame);
+            setError(null);
+            updateWsHasData(true);
+          } else {
             setError('No data');
-        };
+            // updateWsHasData(false);
+          }
+        }
+      };
 
-        socket.onerror = (error) => {
-            console.log('WebSocket Error: ', error);
-            setError('No connection');
-        };
+      // timeoutRef.current = setTimeout(() => {
+      //   setError('No data');
+      //   // updateWsHasData(false);
+      // }, timeoutDuration);
 
-        socket.onclose = (event) => {
-            if (!event.wasClean) {
-                setError('No connection');
-            }
-        };
+    }
 
-        socket.onmessage = (message) => {
-            const data = JSON.parse(message.data);
-            if (data.type === 'video.update') {
-                if (data.frame) {
-                    setVideoSrc('data:image/jpeg;base64,' + data.frame);
-                    setError(null); // Reset error when data is received
-                } else {
-                    setError('No data');
-                }
-            }
-        };
 
-        // Clean up the connection when the component is unmounted
-        return () => {
-            if(socket.readyState === WebSocket.OPEN) {
-                socket.close();
-            }
-        };
-    }, []);
+    // return () => {
+    //   clearTimeout(timeoutRef.current);
+    //   if (socket.readyState === WebSocket.OPEN) {
+    //     socket.close();
+    //   }
+    // };
 
-    return (
-        <div>
-            {error ? (
-                <div>{error}</div>
-            ) : (
-                <img src={videoSrc} width="640" height="480" alt="Video Stream" />
-            )}
-        </div>
-    );
+  }, [socket]);
+
+
+
+  return (
+    <>
+      <div>
+        {(error === "No data" || error === "No connection") ? (<div>{error}</ div>) :
+          (<><img src={videoSrc} width="640" height="480" alt="Video Stream" />
+            {mode === 1 ? <LineChart /> : ""}
+
+          </>)
+        }
+      </ div>
+
+    </>
+  );
 }
 
 export default MQTTVideo;

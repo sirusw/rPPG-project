@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useState } from 'react';
 import {
   DesktopOutlined, SettingOutlined 
@@ -7,7 +7,7 @@ import { Select, Layout, Menu, theme, Typography } from 'antd';
 import MQTTVideo from './components/MQTTVideo';
 import Config from './components/Config';
 import DeviceCam from './components/DeviceCam';
-import LineChart from './components/LineChart';
+import { setCsrfToken } from './api/api';
 const { Header, Content, Footer } = Layout;
 
 
@@ -28,10 +28,36 @@ const items = [
 const App = () => {
   const [selectedKey, setSelectedKey] = useState('1');
   const [camera, setCamera] = useState('device');
+  const [wsHasData, setWsHasData] = useState(true);
+  const [socket, setSocket] = useState(null);
+
+  useEffect(() => {
+    if (!socket) {
+      const socketConnection = new WebSocket('ws://localhost:8000/ws/video/');
+      setSocket(socketConnection);
+    }
+  
+    return () => {
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.close();
+      }
+    };
+  }, [socket]);
+  
   const {
     token: { colorBgContainer },
   } = theme.useToken();
 
+  const updateWsHasData = (hasData) => {
+    setWsHasData(hasData);
+  }
+
+  useEffect(() => {
+    setCsrfToken()
+      .then(data => console.log(data))
+      .catch(error => console.error('Error:', error));
+  }, []);
+  
   let content;
 
   if(selectedKey === '1') {
@@ -57,12 +83,21 @@ const App = () => {
           ]}
         />
       </div>
-      {camera === 'device' ? <DeviceCam /> : <MQTTVideo />}
-      <LineChart/>
+      {camera === 'device' ? 
+        <DeviceCam socket={socket}/> : 
+        wsHasData ?
+        <MQTTVideo updateWsHasData={updateWsHasData} mode={1} socket={socket}/>
+        : <h1>No data from ESP32!</h1>}
+      
       </div>;
   } else if(selectedKey === '2') {
-    content = <Config />;
+    content = <Config socket={socket}/>;
   }
+
+  useEffect(() => {
+    setCamera('device');
+  }
+  , [selectedKey]);
 
   return (
     <Layout className="layout" style={{height: '100%'}}>
