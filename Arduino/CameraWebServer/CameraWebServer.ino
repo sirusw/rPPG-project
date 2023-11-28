@@ -5,6 +5,7 @@
 #include <EEPROM.h>  // Include the EEPROM library to enable reading and writing to the flash memory
 #include <base64.h>
 #include <ArduinoJson.h>
+#include <Preferences.h>
 //
 // WARNING!!! PSRAM IC required for UXGA resolution and high JPEG quality
 //            Ensure ESP32 Wrover Module or other board with PSRAM is selected
@@ -43,12 +44,16 @@ WiFiManager wifiManager;
 
 char wifi_ssid[32] = "TP-Link_920A";
 char wifi_password[32] = "59900368";
-char mqtt_broker[32] = "43.198.97.150";
+char mqtt_broker[32] = "192.168.0.103";
 int mqtt_port = 18839;
 char mqtt_username[32] = "mqtt";
 char mqtt_password[32] = "1234";
 char mqtt_tx[32] = "/data/tx";
 char mqtt_rx[32] = "/data/rx";
+
+Preferences preferences;
+
+WiFiManagerParameter custom_mqtt_broker("mqtt_broker", "mqtt broker", mqtt_broker, 40);
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -61,10 +66,19 @@ void saveConfigCallback() {
   Serial.println("Inside saveConfigCallback");
   String ssid = wifiManager.getWiFiSSID();
   String password = wifiManager.getWiFiPass();
+  
   Serial.println(ssid);
   Serial.println(password);
   strncpy(wifi_ssid, ssid.c_str(), sizeof(wifi_ssid));
   strncpy(wifi_password, password.c_str(), sizeof(wifi_password));
+  String brokerValue = custom_mqtt_broker.getValue();  // Use the custom parameter directly
+  strncpy(mqtt_broker, brokerValue.c_str(), sizeof(mqtt_broker));
+
+  preferences.begin("my-app", false);
+  preferences.putString("ssid", ssid);
+  preferences.putString("password", password);
+  preferences.putString("broker", brokerValue);
+  preferences.end();
 
   Serial.println("End of saveConfigCallback");
 }
@@ -86,11 +100,14 @@ void mqtt_config_callback(char* topic, byte* payload, unsigned int length) {
   
   sensor_t *s = esp_camera_sensor_get();
 
+  Serial.println(param);
+  Serial.println(value);
+
   if (strcmp(param, "sync") == 0) {
 
     sensor_t * s = esp_camera_sensor_get();
     
-    DynamicJsonDocument syncDoc(1024);
+    DynamicJsonDocument syncDoc(2048);
 
     JsonArray params = syncDoc.createNestedArray("params");
     
@@ -240,10 +257,10 @@ void mqtt_config_callback(char* topic, byte* payload, unsigned int length) {
     paramObj["value"] = s->status.ae_level;  
     
 
-    char buffer[1024];
+    char buffer[2048];
     serializeJson(syncDoc, buffer);
     
-    client.publish("config/tx", buffer);
+    client.publish("/config/tx", buffer);
     
   }
   else if (strcmp(param, "framesize") == 0) {
@@ -427,20 +444,22 @@ void setup() {
 #if defined(LED_GPIO_NUM)
   setupLedFlash(LED_GPIO_NUM);
 #endif
+  wifiManager.addParameter(&custom_mqtt_broker);
+
   wifiManager.setConfigPortalTimeout(180);
   wifiManager.setBreakAfterConfig(false);
-
   wifiManager.setSaveConfigCallback(saveConfigCallback);
 
-  // Uncomment for testing wifi manager
-  //wifiManager.resetSettings();
+  preferences.begin("my-app", true);
+  String ssid = preferences.getString("ssid", "");
+  String password = preferences.getString("password", "");
+  String broker = preferences.getString("broker", "");
+  preferences.end();
 
-  // Exit the configuration portal after trying to connect to Wi-Fi for a minute
-  // wifiManager.setConfigPortalTimeout(240);
-
-  // If it cannot connect to Wi-Fi in the given time, it starts an access point with the specified name
-  // Here, "AutoConnectAP" is the name of the created Access Point
-  // and goes into a blocking loop awaiting configuration
+  // Copy to global variables
+  strncpy(wifi_ssid, ssid.c_str(), sizeof(wifi_ssid));
+  strncpy(wifi_password, password.c_str(), sizeof(wifi_password));
+  strncpy(mqtt_broker, broker.c_str(), sizeof(mqtt_broker));
 
   WiFi.begin(wifi_ssid, wifi_password);
   delay(1000);
@@ -452,8 +471,30 @@ void setup() {
     }
     delay(1000);
   }
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("Connected to WiFi!");
+
+  // client.setBufferSize(MQTT_MAX_PACKET_SIZE); // increase from default 128 bytes
+    client.setServer(mqtt_broker, mqtt_port);
+    client.setCallback(mqtt_config_callback);
+
+    bool mqttConnected = false;
+
+    int connection_attempts = 0;
+    while (!client.connected() && connection_attempts < 3) {
+      if (client.connect("ESP32Client", mqtt_username, mqtt_password)) {
+        Serial.println("Connected to MQTT Broker!");
+        client.publish("/data/tx", "hello world");
+        client.subscribe("/config/rx", 1);
+        mqttConnected = true;
+      } else {
+        Serial.println("Failed to connect to MQTT Broker.");
+        delay(1000);
+      }
+      connection_attempts++;
+    }
+
+  if (WiFi.status() == WL_CONNECTED && mqttConnected) {
+    Serial.println("Connected to WiFi and MQTT!");
+    
   } else {
     if (!wifiManager.startConfigPortal("ESP32")) {
       Serial.println("Failed to connect and hit timeout");
@@ -486,30 +527,6 @@ void setup() {
   // If you get here you have connected to the Wi-Fi
   Serial.println("Connected");
 
-  // MQTT connection
-  Serial.println("MQTT:");
-  Serial.println("mqtt_broker");
-  Serial.println("mqtt_port");
-  Serial.println("mqtt_username");
-  Serial.println("mqtt_password");
-  Serial.println("MQTT:");
-  // client.setBufferSize(MQTT_MAX_PACKET_SIZE); // increase from default 128 bytes
-  client.setServer(mqtt_broker, mqtt_port);
-  client.setCallback(mqtt_config_callback);
-
-  int connection_attempts = 0;
-  while (!client.connected() && connection_attempts < 5) {
-    if (client.connect("ESP32Client", mqtt_username, mqtt_password)) {
-      Serial.println("Connected to MQTT Broker!");
-      client.publish("/data/tx", "hello world");
-      client.subscribe("/config/rx", 1);
-    } else {
-      Serial.println("Failed to connect to MQTT Broker.");
-      delay(2000);
-    }
-    connection_attempts++;
-  }
-
   startCameraServer();
 
   Serial.print("Camera Ready! Use 'http://");
@@ -538,8 +555,8 @@ void loop() {
   // Publish the Base64 image data to a MQTT topic
   // Note: This might fail if the image data is too large. Most MQTT brokers
   // have a maximum packet size of around 256 kB.
-  Serial.print("image length:");
-  Serial.print(image_data_base64.length());
+  // Serial.print("image length:");
+  // Serial.print(image_data_base64.length());
   if (image_data_base64.length() < MQTT_MAX_PACKET_SIZE) {
     // Publish image
     int result = client.publish("/data/tx", image_data_base64.c_str());
@@ -547,7 +564,7 @@ void loop() {
 
     // Check result
     if (result == true) {
-      Serial.println("Image sent");
+      // Serial.println("Image sent");
     } else {
       Serial.print("Error sending image:");
       Serial.println(result);
