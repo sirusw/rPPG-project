@@ -19,6 +19,10 @@ sudo service redis-server start
 sudo service redis-server status
 ```
 
+```bash
+redis-cli -h 127.0.0.1 -p 6379
+```
+
 3. Start the Daphne server.
 
 ```bash
