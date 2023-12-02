@@ -18,6 +18,16 @@ function DeviceCam({socket}) {
 
     useEffect(() => {
         let socketOpened = false;
+
+        const changeMode = () => {
+            const command = {
+                type: 'mode.change',
+                mode: 'front'
+            };
+            socket.send(JSON.stringify(command));
+            console.log("DeviceCam mode changed");
+        };
+
         const startRecording = () => {
             navigator.mediaDevices.getUserMedia({ video: true })
                 .then(stream => {
@@ -31,7 +41,11 @@ function DeviceCam({socket}) {
                             reader.onloadend = function () {
                                 const rawData = reader.result;
                                 const base64Data = arrayBufferToBase64(rawData);
-                                socket.send(base64Data);
+                                const message = {
+                                    type: 'video.receive',
+                                    frame: base64Data
+                                };
+                                socket.send(JSON.stringify(message));
                             }
                         }
                     };
@@ -46,12 +60,14 @@ function DeviceCam({socket}) {
             socket.onopen = () => {
                 console.log('WebSocket Client Connected');
                 socketOpened = true;
+                changeMode();
                 startRecording();
             };
             socket.onclose = () => {
                 socketOpened = false;
             };
             if (socket.readyState === WebSocket.OPEN) {
+                changeMode();
                 startRecording();
             }
         }

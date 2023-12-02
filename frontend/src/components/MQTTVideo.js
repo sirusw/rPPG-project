@@ -1,15 +1,26 @@
 import React, { useEffect, useState, useRef }
   from 'react';
 import LineChart from './LineChart';
+import { set } from 'lodash';
 // mode: 1 for display, 2 for config
 function MQTTVideo({ mode, updateWsHasData, socket }) {
   const [videoSrc, setVideoSrc] = useState("");
   const [error, setError] = useState('No connection');
+  const [heartRate, setHeartRate] = useState(0);
   const timeoutRef = useRef(null);
 
   useEffect(() => {
     // const socket = new WebSocket('ws://localhost:8000/ws/video/');
     const timeoutDuration = 2000;
+    // const changeMode = () => {
+    //   const command = {
+    //       type: 'mode.change',
+    //       mode: 'back'
+    //   };
+    //   socket.send(JSON.stringify(command));
+    // };
+
+    // changeMode();
 
     if (socket) {
       socket.onopen = () => {
@@ -42,6 +53,10 @@ function MQTTVideo({ mode, updateWsHasData, socket }) {
             // updateWsHasData(false);
           }
         }
+        else if (data.type === 'video.hr'){
+          console.log(data.hr);
+          setHeartRate(data.hr);
+        }
       };
 
       // timeoutRef.current = setTimeout(() => {
@@ -68,7 +83,7 @@ function MQTTVideo({ mode, updateWsHasData, socket }) {
       <div>
         {(error === "No data" || error === "No connection") ? (<div>{error}</ div>) :
           (<><img src={videoSrc} width="640" height="480" alt="Video Stream" />
-            {mode === 1 ? <LineChart /> : ""}
+            {mode === 1 ? <LineChart heartRate={heartRate}/> : ""}
 
           </>)
         }

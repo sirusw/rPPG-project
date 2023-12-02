@@ -4,7 +4,7 @@ import { Chart, CategoryScale, LinearScale, LineElement, PointElement, LineContr
 
 Chart.register(CategoryScale, LinearScale, LineElement, PointElement, LineController);
 
-const LineChart = () => {
+const LineChart = ({heartRate}) => {
   const [dataPoints, setDataPoints] = useState([]);
 
   // Function to add data
@@ -19,12 +19,13 @@ const LineChart = () => {
   };
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      addDataPoint(Math.floor(Math.random() * 40) + 60);
-    }, 3000);
+    // const intervalId = setInterval(() => {
+    //   addDataPoint(heartRate);
+    // }, 3000);
 
-    return () => clearInterval(intervalId); // Clean up on unmount
-  }, []);
+    // return () => clearInterval(intervalId); // Clean up on unmount
+    addDataPoint(heartRate);
+  }, [heartRate]);
 
   const data = {
     labels: Array.from({ length: 10 }, (_, i) => i + 1), // labels are always 1 to 10

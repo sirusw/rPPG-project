@@ -27,7 +27,7 @@ const items = [
 
 const App = () => {
   const [selectedKey, setSelectedKey] = useState('1');
-  const [camera, setCamera] = useState('device');
+  const [camera, setCamera] = useState('esp32');
   const [wsHasData, setWsHasData] = useState(true);
   const [socket, setSocket] = useState(null);
 
@@ -63,7 +63,7 @@ const App = () => {
   if(selectedKey === '1') {
     content = 
     <div style={{height: '100%'}}>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
+      {/* <div style={{ display: 'flex', alignItems: 'center' }}>
         <Typography>
           <h3>Camera selection:</h3>
         </Typography>
@@ -82,12 +82,12 @@ const App = () => {
             },
           ]}
         />
-      </div>
-      {camera === 'device' ? 
+      </div> */}
+      {/* {camera === 'device' ? 
         <DeviceCam socket={socket}/> : 
-        wsHasData ?
-        <MQTTVideo updateWsHasData={updateWsHasData} mode={1} socket={socket}/>
-        : <h1>No data from ESP32!</h1>}
+        wsHasData ? */}
+      <MQTTVideo updateWsHasData={updateWsHasData} mode={1} socket={socket}/>
+        {/* : <h1>No data from ESP32!</h1>} */}
       
       </div>;
   } else if(selectedKey === '2') {

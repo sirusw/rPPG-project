@@ -6,70 +6,10 @@ import paho.mqtt.client as mqtt
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import json
-
-
-# Load the cascade
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-
-# client = None
-
-
-
-# def on_connect(client, userdata, flags, rc):
-#     print("Connected to MQTT broker with result code "+str(rc))
-#     client.subscribe("/data/tx")
-
-# def on_message(client, userdata, msg):
-#     # Decode base64 data to get video frame
-#     # decoded_data = base64.b64decode(msg.payload)
-#     # np_data = np.frombuffer(decoded_data, np.uint8)
-#     # frame = cv2.imdecode(np_data, cv2.IMREAD_UNCHANGED)
-
-#     frame_base64 = msg.payload.decode('utf-8')
-
-#     # # Convert to grayscale
-#     # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-#     # # Detect faces
-#     # faces = face_cascade.detectMultiScale(gray, 1.1, 4)
-
-#     # # If at least one face is detected, draw rectangle around the first one
-#     # if len(faces) > 0:
-#     #     (x, y, w, h) = faces[0]
-#     #     # Draw rectangle around the face
-#     #     cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
-
-#     # Re-encode the frame to base64 so it can be sent to the frontend
-#     # retval, buffer = cv2.imencode('.jpg', frame)
-#     # frame_base64 = base64.b64encode(buffer).decode('utf-8')
-
-#     channel_layer = get_channel_layer()
-
-#     # Send results to frontend
-#     async_to_sync(channel_layer.group_send)(
-#         "video",
-#         {
-#             "type": "video.update",
-#             "frame": frame_base64,
-#         }
-#     )
-
-
-# def start_mqtt_client():
-#     global client
-#     client = mqtt.Client(transport="websockets")
-
-#     # Set username and password for mqtt client
-#     client.username_pw_set("mqtt", "1234")
-
-#     client.on_connect = on_connect
-#     client.on_message = on_message
-
-#     client.connect("127.0.0.1", 9001)
-
-#     client.loop_start()
-
-# start_mqtt_client()
+import time
+import random
+import asyncio
+from threading import Thread, Lock
 
 class MQTTClient:
     _instance = None
@@ -88,6 +28,31 @@ class MQTTClient:
         self.client.connect("127.0.0.1", 9001)
         self.client.loop_start()
         self.received_param = {}
+        self.frame_buffer = []
+        self.frame_buffer_size = 30
+        self.lock = Lock()
+
+    def rppg_fake_data(self, frame):
+        def run_fake_data():
+            with self.lock:
+                self.frame_buffer.append(frame)
+                if len(self.frame_buffer) >= self.frame_buffer_size:
+                    self.frame_buffer.pop(0)
+
+                    channel_layer = get_channel_layer()
+                    time.sleep(3)
+                    # Generate a random heart rate in the normal range (60-100 beats per minute)
+                    heart_rate = random.randint(60, 100)
+                    # Send heart rate results to frontend
+                    async_to_sync(channel_layer.group_send)(
+                        "video",
+                        {
+                            "type": "video.hr",
+                            "hr": heart_rate,
+                        }
+                    )
+
+        Thread(target=run_fake_data).start()
 
     def on_connect(self, client, userdata, flags, rc):
         print("Connected to MQTT broker with result code "+str(rc))
@@ -101,7 +66,11 @@ class MQTTClient:
                 print(self.received_param)
             except json.JSONDecodeError:
                 print(f"Invalid JSON: {msg.payload.decode()}")
+            
+            return
+        
         frame_base64 = msg.payload.decode('utf-8')
+        self.rppg_fake_data(frame_base64)
 
         channel_layer = get_channel_layer()
 
@@ -113,10 +82,13 @@ class MQTTClient:
                 "frame": frame_base64,
             }
         )
+
     def stop(self):
         self.client.loop_stop()
         self.client.disconnect()
         print("MQTT client stopped")
+
+    
 
 # Return the single instance of MQTTClient
 mqtt_client = MQTTClient.get_instance()

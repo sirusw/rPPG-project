@@ -32,13 +32,17 @@ const Config = ({ socket }) => {
 
     const [apiParam, setApiParam] = useState('');
     const [apiValue, setApiValue] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [synced, setSynced] = useState(false);
+    const [response, setResponse] = useState(null);
+    const [hasSynced, setHasSynced] = useState(false);
+    const [key, setKey] = useState(0);
 
 
     const handleFormSubmit = async () => {
 
         try {
-            console.log(apiParam, apiValue);
-            const data = await sendApiRequest(apiParam, apiValue);
+            const data = await sendApiRequest(apiParam, apiValue.toString());
 
             // Handle the API response
         } catch (error) {
@@ -51,17 +55,17 @@ const Config = ({ socket }) => {
 
     // this function syncs the config of camera from the ESP32 to the frontend
     const syncData = async () => {
-
+        setLoading(true);
         try {
-            const data = await sendSyncRequest();
-            console.log(data);
-
-            // Handle the API response
+            const response = await sendSyncRequest();
+            setResponse(response);
+            setSynced(true);
         } catch (error) {
-            // Handle any errors
-            console.error(error);
+
+        } finally {
+            setLoading(false);
         }
-    };
+    }
 
 
     const updateWsHasData = (hasData) => {
@@ -229,294 +233,337 @@ const Config = ({ socket }) => {
     }
 
     useEffect(() => {
-        if (apiParam && apiValue)
+        if (apiParam && apiValue !== '')
             debouncedApiCall(); // Call the API when apiParam or apiValue changes
         return () => {
             debouncedApiCall.cancel();
         };
     }, [apiParam, apiValue]);
 
+
     useEffect(() => {
-        syncData();
-    }, []);
+        if (!hasSynced) {
+            syncData();
+            setHasSynced(true);
+        }
+    }, [hasSynced]);
 
-    if (wsHasData) {
+    useEffect(() => {
+        if (response) {
+            const { params } = response;
+            const data = {};
+            params.forEach(param => {
+                data[param.param] = param.value;
+            });
+            setResInput(data.framesize);
+            setQualityInput(data.quality);
+            setBrightnessInput(data.brightness);
+            setContrastInput(data.contrast);
+            setSaturationInput(data.saturation);
+            setSEInput(data.special_effect);
+            setAwbInput(data.awb);
+            setAwbGainInput(data.awb_gain);
+            setWbModeInput(data.wb_mode);
+            setAecInput(data.aec);
+            setAecDSPInput(data.aec2);
+            setAeLevelInput(data.ae_level);
+            setAgcInput(data.agc);
+            setGainCeilInput(data.gainceiling);
+            setBpcInput(data.bpc);
+            setWpcInput(data.wpc);
+            setRawGMAInput(data.raw_gma);
+            setLencInput(data.lenc);
+            setHmirrorInput(data.hmirror);
+            setVflipInput(data.vflip);
+            setDcwInput(data.dcw);
+            setColorbarInput(data.colorbar);
+            setLedIntensityInput(data.led_intensity);
+            setKey(prevKey => prevKey + 1);
+        }
+    }, [response])
+
+    if (wsHasData && response) {
+        console.log(response);
         return (
+            <>
+                {loading && <p>Syncing parameters...</p>}
+                {synced && <p>Parameters synced!</p>}
 
-            <div style={{ marginTop: '50px' }}>
-                <Row gutter={16}>
-                    <Col span={12}>
-                        <Row gutter={16}>
-                            <Col span={8}><h3>Camera resolution</h3></Col>
-                            <Col span={16} style={{ display: 'flex', alignContent: 'center' }}>
-                                <Select
-                                    defaultValue='5'
-                                    style={{ width: 300, height: 40 }} // Increase width and height
-                                    onChange={onResChange}
-                                    options={[
-                                        { value: '0', label: '96x96' },
-                                        { value: '1', label: 'QQVGA(160x120)' },
-                                        { value: '2', label: 'QCIF(176x144)' },
-                                        { value: '3', label: 'HQVGA(240x176)' },
-                                        { value: '4', label: '240x240' },
-                                        { value: '5', label: 'QVGA(320x240)' },
-                                        { value: '6', label: 'CIF(400x296)' },
-                                        { value: '7', label: 'HVGA(480x320)' },
-                                        { value: '8', label: 'VGA(640x480)' }
-                                    ]}
-                                />
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8}><h3>Camera quality</h3></Col>
-                            <Col span={16} style={{ display: 'flex', justifyContent: 'center', alignContent: 'center' }}>
-                                <div style={{ display: 'flex' }}>
-                                    <p>4</p>
-                                    <Slider
-                                        min={4}
-                                        max={63}
-                                        onChange={onQualityChange}
-                                        value={typeof qualityInput === 'number' ? qualityInput : 0}
-                                        style={{ width: 300, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
+                <div style={{ marginTop: '50px' }}>
+                    <Row gutter={16} key={key}>
+                        <Col span={12}>
+                            <Row gutter={16}>
+                                <Col span={8}><h3>Camera resolution</h3></Col>
+                                <Col span={16} style={{ display: 'flex', alignContent: 'center' }}>
+                                    <Select
+                                        defaultValue='5'
+                                        style={{ width: 300, height: 40 }} // Increase width and height
+                                        onChange={onResChange}
+                                        options={[
+                                            { value: '0', label: '96x96' },
+                                            { value: '1', label: 'QQVGA(160x120)' },
+                                            { value: '2', label: 'QCIF(176x144)' },
+                                            { value: '3', label: 'HQVGA(240x176)' },
+                                            { value: '4', label: '240x240' },
+                                            { value: '5', label: 'QVGA(320x240)' },
+                                            { value: '6', label: 'CIF(400x296)' },
+                                            { value: '7', label: 'HVGA(480x320)' },
+                                            { value: '8', label: 'VGA(640x480)' }
+                                        ]}
                                     />
-                                    <p>63</p>
-                                </div>
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8}><h3>Brightness</h3></Col>
-                            <Col span={16} style={{ display: 'flex', justifyContent: 'center', alignContent: 'center' }}>
-                                <div style={{ display: 'flex' }}>
-                                    <p>-2</p>
-                                    <Slider
-                                        min={-2}
-                                        max={2}
-                                        onChange={onBrightnessChange}
-                                        value={typeof brightnessInput === 'number' ? brightnessInput : 0}
-                                        style={{ width: 300, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8}><h3>Camera quality</h3></Col>
+                                <Col span={16} style={{ display: 'flex', justifyContent: 'center', alignContent: 'center' }}>
+                                    <div style={{ display: 'flex' }}>
+                                        <p>4</p>
+                                        <Slider
+                                            min={4}
+                                            max={63}
+                                            onChange={onQualityChange}
+                                            value={typeof qualityInput === 'number' ? qualityInput : 0}
+                                            style={{ width: 300, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
+                                        />
+                                        <p>63</p>
+                                    </div>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8}><h3>Brightness</h3></Col>
+                                <Col span={16} style={{ display: 'flex', justifyContent: 'center', alignContent: 'center' }}>
+                                    <div style={{ display: 'flex' }}>
+                                        <p>-2</p>
+                                        <Slider
+                                            min={-2}
+                                            max={2}
+                                            onChange={onBrightnessChange}
+                                            value={typeof brightnessInput === 'number' ? brightnessInput : 0}
+                                            style={{ width: 300, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
+                                        />
+                                        <p>2</p>
+                                    </div>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8}><h3>Contrast</h3></Col>
+                                <Col span={16} style={{ display: 'flex', justifyContent: 'center', alignContent: 'center' }}>
+                                    <div style={{ display: 'flex' }}>
+                                        <p>-2</p>
+                                        <Slider
+                                            min={-2}
+                                            max={2}
+                                            onChange={onContrastChange}
+                                            value={typeof contrastInput === 'number' ? contrastInput : 0}
+                                            style={{ width: 300, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
+                                        />
+                                        <p>2</p>
+                                    </div>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8}><h3>Saturation</h3></Col>
+                                <Col span={16} style={{ display: 'flex', justifyContent: 'center', alignContent: 'center' }}>
+                                    <div style={{ display: 'flex' }}>
+                                        <p>-2</p>
+                                        <Slider
+                                            min={-2}
+                                            max={2}
+                                            onChange={onSaturationChange}
+                                            value={typeof saturationInput === 'number' ? saturationInput : 0}
+                                            style={{ width: 300, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
+                                        />
+                                        <p>2</p>
+                                    </div>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}><h3>Special Effect</h3></Col>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <Select
+                                        defaultValue='0'
+                                        style={{ width: 300, height: 40 }} // Increase width and height
+                                        onChange={onSEChange}
+                                        options={[
+                                            { value: '0', label: 'No Effect' },
+                                            { value: '1', label: 'Negative' },
+                                            { value: '2', label: 'Grayscale' },
+                                            { value: '3', label: 'Red Tint' },
+                                            { value: '4', label: 'Green Tint' },
+                                            { value: '5', label: 'Blue Tint' },
+                                            { value: '6', label: 'Sepia' }
+                                        ]}
                                     />
-                                    <p>2</p>
-                                </div>
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8}><h3>Contrast</h3></Col>
-                            <Col span={16} style={{ display: 'flex', justifyContent: 'center', alignContent: 'center' }}>
-                                <div style={{ display: 'flex' }}>
-                                    <p>-2</p>
-                                    <Slider
-                                        min={-2}
-                                        max={2}
-                                        onChange={onContrastChange}
-                                        value={typeof contrastInput === 'number' ? contrastInput : 0}
-                                        style={{ width: 300, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <h3>AWB</h3>
+                                </Col>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <Switch onChange={onAwbChange} defaultChecked />
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <h3>AWB Gain</h3>
+                                </Col>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <Switch onChange={onAwbGainChange} defaultChecked />
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}><h3>WB Mode</h3></Col>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <Select
+                                        defaultValue='0'
+                                        style={{ width: 300, height: 40 }} // Increase width and height
+                                        onChange={onWbModeChange}
+                                        options={[
+                                            { value: '0', label: 'Auto' },
+                                            { value: '1', label: 'Sunny' },
+                                            { value: '2', label: 'Cloudy' },
+                                            { value: '3', label: 'Office' },
+                                            { value: '4', label: 'Home' }
+                                        ]}
                                     />
-                                    <p>2</p>
-                                </div>
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8}><h3>Saturation</h3></Col>
-                            <Col span={16} style={{ display: 'flex', justifyContent: 'center', alignContent: 'center' }}>
-                                <div style={{ display: 'flex' }}>
-                                    <p>-2</p>
-                                    <Slider
-                                        min={-2}
-                                        max={2}
-                                        onChange={onSaturationChange}
-                                        value={typeof saturationInput === 'number' ? saturationInput : 0}
-                                        style={{ width: 300, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
-                                    />
-                                    <p>2</p>
-                                </div>
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8} style={{ display: 'flex', alignItems: 'center' }}><h3>Special Effect</h3></Col>
-                            <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
-                                <Select
-                                    defaultValue='0'
-                                    style={{ width: 300, height: 40 }} // Increase width and height
-                                    onChange={onSEChange}
-                                    options={[
-                                        { value: '0', label: 'No Effect' },
-                                        { value: '1', label: 'Negative' },
-                                        { value: '2', label: 'Grayscale' },
-                                        { value: '3', label: 'Red Tint' },
-                                        { value: '4', label: 'Green Tint' },
-                                        { value: '5', label: 'Blue Tint' },
-                                        { value: '6', label: 'Sepia' }
-                                    ]}
-                                />
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
-                                <h3>AWB</h3>
-                            </Col>
-                            <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
-                                <Switch onChange={onAwbChange} defaultChecked />
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
-                                <h3>AWB Gain</h3>
-                            </Col>
-                            <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
-                                <Switch onChange={onAwbGainChange} defaultChecked />
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8} style={{ display: 'flex', alignItems: 'center' }}><h3>WB Mode</h3></Col>
-                            <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
-                                <Select
-                                    defaultValue='0'
-                                    style={{ width: 300, height: 40 }} // Increase width and height
-                                    onChange={onWbModeChange}
-                                    options={[
-                                        { value: '0', label: 'Auto' },
-                                        { value: '1', label: 'Sunny' },
-                                        { value: '2', label: 'Cloudy' },
-                                        { value: '3', label: 'Office' },
-                                        { value: '4', label: 'Home' }
-                                    ]}
-                                />
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
-                                <h3>AEC Sensor</h3>
-                            </Col>
-                            <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
-                                <Switch onChange={onAecChange} defaultChecked />
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
-                                <h3>AEC DSP</h3>
-                            </Col>
-                            <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
-                                <Switch onChange={onAecDSPChange} />
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8}><h3>AE Level</h3></Col>
-                            <Col span={16} style={{ display: 'flex', justifyContent: 'center', alignContent: 'center' }}>
-                                <div style={{ display: 'flex' }}>
-                                    <p>-2</p>
-                                    <Slider
-                                        min={-2}
-                                        max={2}
-                                        onChange={onAeLevelChange}
-                                        value={typeof aeLevelInput === 'number' ? aeLevelInput : 0}
-                                        style={{ width: 300, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
-                                    />
-                                    <p>2</p>
-                                </div>
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
-                                <h3>AGC</h3>
-                            </Col>
-                            <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
-                                <Switch onChange={onAgcChange} defaultChecked />
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8}><h3>Gain Ceiling</h3></Col>
-                            <Col span={16} style={{ display: 'flex', justifyContent: 'center', alignContent: 'center' }}>
-                                <div style={{ display: 'flex' }}>
-                                    <p>2x</p>
-                                    <Slider
-                                        min={0}
-                                        max={6}
-                                        onChange={onGainCeilChange}
-                                        value={typeof gainCeilInput === 'number' ? gainCeilInput : 0}
-                                        style={{ width: 300, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
-                                    />
-                                    <p>128x</p>
-                                </div>
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
-                                <h3>BPC</h3>
-                            </Col>
-                            <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
-                                <Switch onChange={onBpcChange} />
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
-                                <h3>WPC</h3>
-                            </Col>
-                            <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
-                                <Switch onChange={onWpcChange} defaultChecked />
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
-                                <h3>Raw GMA</h3>
-                            </Col>
-                            <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
-                                <Switch onChange={onRawGMAChange} defaultChecked />
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
-                                <h3>LENC</h3>
-                            </Col>
-                            <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
-                                <Switch onChange={onLencChange} defaultChecked />
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8} style={{ display: 'flex', alignItems: 'center' }}><h3>HMirror</h3></Col>
-                            <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
-                                <Switch onChange={onHmirrorChange} />
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8} style={{ display: 'flex', alignItems: 'center' }}><h3>VFlip</h3></Col>
-                            <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
-                                <Switch onChange={onVflipChange} />
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8} style={{ display: 'flex', alignItems: 'center' }}><h3>DCW</h3></Col>
-                            <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
-                                <Switch onChange={onDcwChange} defaultChecked />
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8} style={{ display: 'flex', alignItems: 'center' }}><h3>Colorbar</h3></Col>
-                            <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
-                                <Switch onChange={onColorbarChange} />
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={8}><h3>LED Intensity</h3></Col>
-                            <Col span={16} style={{ display: 'flex', justifyContent: 'center', alignContent: 'center' }}>
-                                <div style={{ display: 'flex' }}>
-                                    <p>0</p>
-                                    <Slider
-                                        min={0}
-                                        max={255}
-                                        onChange={onLedIntensityChange}
-                                        value={typeof ledIntensityInput === 'number' ? ledIntensityInput : 0}
-                                        style={{ width: 300, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
-                                    />
-                                    <p>255</p>
-                                </div>
-                            </Col>
-                        </Row>
-                    </Col>
-                    <Col span={12}>
-                        <MQTTVideo updateWsHasData={updateWsHasData} mode={2} socket={socket} />
-                    </Col>
-                </Row>
-            </div>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <h3>AEC Sensor</h3>
+                                </Col>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <Switch onChange={onAecChange} defaultChecked />
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <h3>AEC DSP</h3>
+                                </Col>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <Switch onChange={onAecDSPChange} />
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8}><h3>AE Level</h3></Col>
+                                <Col span={16} style={{ display: 'flex', justifyContent: 'center', alignContent: 'center' }}>
+                                    <div style={{ display: 'flex' }}>
+                                        <p>-2</p>
+                                        <Slider
+                                            min={-2}
+                                            max={2}
+                                            onChange={onAeLevelChange}
+                                            value={typeof aeLevelInput === 'number' ? aeLevelInput : 0}
+                                            style={{ width: 300, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
+                                        />
+                                        <p>2</p>
+                                    </div>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <h3>AGC</h3>
+                                </Col>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <Switch onChange={onAgcChange} defaultChecked />
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8}><h3>Gain Ceiling</h3></Col>
+                                <Col span={16} style={{ display: 'flex', justifyContent: 'center', alignContent: 'center' }}>
+                                    <div style={{ display: 'flex' }}>
+                                        <p>2x</p>
+                                        <Slider
+                                            min={0}
+                                            max={6}
+                                            onChange={onGainCeilChange}
+                                            value={typeof gainCeilInput === 'number' ? gainCeilInput : 0}
+                                            style={{ width: 300, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
+                                        />
+                                        <p>128x</p>
+                                    </div>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <h3>BPC</h3>
+                                </Col>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <Switch onChange={onBpcChange} />
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <h3>WPC</h3>
+                                </Col>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <Switch onChange={onWpcChange} defaultChecked />
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <h3>Raw GMA</h3>
+                                </Col>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <Switch onChange={onRawGMAChange} defaultChecked />
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <h3>LENC</h3>
+                                </Col>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <Switch onChange={onLencChange} defaultChecked />
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}><h3>HMirror</h3></Col>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <Switch onChange={onHmirrorChange} />
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}><h3>VFlip</h3></Col>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <Switch onChange={onVflipChange} />
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}><h3>DCW</h3></Col>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <Switch onChange={onDcwChange} defaultChecked />
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}><h3>Colorbar</h3></Col>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                    <Switch onChange={onColorbarChange} />
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={8}><h3>LED Intensity</h3></Col>
+                                <Col span={16} style={{ display: 'flex', justifyContent: 'center', alignContent: 'center' }}>
+                                    <div style={{ display: 'flex' }}>
+                                        <p>0</p>
+                                        <Slider
+                                            min={0}
+                                            max={255}
+                                            onChange={onLedIntensityChange}
+                                            value={typeof ledIntensityInput === 'number' ? ledIntensityInput : 0}
+                                            style={{ width: 300, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
+                                        />
+                                        <p>255</p>
+                                    </div>
+                                </Col>
+                            </Row>
+                        </Col>
+                        <Col span={12}>
+                            <MQTTVideo updateWsHasData={updateWsHasData} mode={2} socket={socket} />
+                        </Col>
+                    </Row>
+                </div>
+            </>
         );
     }
     else {

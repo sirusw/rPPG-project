@@ -2,10 +2,10 @@ import cookie from 'react-cookies';
 export async function sendApiRequest(param, value) {
     const url = 'http://localhost:8000/api/config'; // Correctly specify the API endpoint URL
     const cookieValue = cookie.load('csrftoken');
-    console.log("cookieValue", cookieValue);
+    console.log("hello");
     const payload = {
       param: param,
-      value: value
+      value: Number(value)
     };
   
     try {
@@ -34,7 +34,6 @@ export async function sendApiRequest(param, value) {
   export async function sendSyncRequest() {
     const url = 'http://localhost:8000/api/sync'; // Correctly specify the API endpoint URL
     const cookieValue = cookie.load('csrftoken');
-    console.log("cookieValue", cookieValue);
     const payload = {
       param: "sync",
       value: 0
