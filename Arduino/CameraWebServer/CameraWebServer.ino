@@ -44,7 +44,7 @@ WiFiManager wifiManager;
 
 char wifi_ssid[32] = "TP-Link_920A";
 char wifi_password[32] = "59900368";
-char mqtt_broker[32] = "192.168.0.103";
+char mqtt_broker[32] = "192.168.0.104";
 int mqtt_port = 18839;
 char mqtt_username[32] = "mqtt";
 char mqtt_password[32] = "1234";
@@ -261,6 +261,7 @@ void mqtt_config_callback(char* topic, byte* payload, unsigned int length) {
     serializeJson(syncDoc, buffer);
     
     client.publish("/config/tx", buffer);
+    Serial.println(buffer);
     
   }
   else if (strcmp(param, "framesize") == 0) {
