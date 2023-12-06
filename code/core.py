@@ -89,9 +89,9 @@ class face2feature:
         self.detector = dlib.get_frontal_face_detector()
         self.predictor = dlib.shape_predictor("./model/shape_predictor_81_face_landmarks.dat")
         
-        # self.stream = cv.VideoCapture(0)
-        self.stream = cv.VideoCapture("./video.avi")
-        print(f"Total frame: {self.stream.get(cv.CAP_PROP_FRAME_COUNT)}")
+        self.stream = cv.VideoCapture(0)
+        # self.stream = cv.VideoCapture("./video.avi")
+        # print(f"Total frame: {self.stream.get(cv.CAP_PROP_FRAME_COUNT)}")
         
         if not self.stream.isOpened():
             self.stream.release()
