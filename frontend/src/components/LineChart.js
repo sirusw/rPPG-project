@@ -10,7 +10,7 @@ const LineChart = ({ heartRate }) => {
   // Function to add data
   const addDataPoint = (data) => {
     setDataPoints(prevDataPoints => {
-      if (prevDataPoints.length >= 10) {
+      if (prevDataPoints.length >= 20) {
         return [data]; // Reset the data array when it reaches 11 points
       } else {
         return [...prevDataPoints, data];
@@ -23,7 +23,7 @@ const LineChart = ({ heartRate }) => {
   }, [heartRate]);
 
   const data = {
-    labels: Array.from({ length: 10 }, (_, i) => i + 1), // labels are always 1 to 10
+    labels: Array.from({ length: 20 }, (_, i) => i + 1), // labels are always 1 to 10
     datasets: [
       {
         label: 'Heart Rate',

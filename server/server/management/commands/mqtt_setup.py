@@ -54,7 +54,7 @@ class MQTTClient:
                         }
                     )
         # Thread(target=run_fake_data).start()
-        self.executor.submit(run_fake_data)
+        # self.executor.submit(run_fake_data)
 
     def on_connect(self, client, userdata, flags, rc):
         print("Connected to MQTT broker with result code "+str(rc))

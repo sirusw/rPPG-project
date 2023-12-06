@@ -13,6 +13,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 from obspy.signal.detrend import polynomial, spline
 from scipy import signal
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+import os
+import paho.mqtt.client as mqtt
+import json
+import base64
+import time
+from collections import deque
+import threading
 
 from utils import RGB_hist, Hist2Feature
 from options import get_options
@@ -89,16 +98,27 @@ class face2feature:
         current_dir = os.path.dirname(__file__)
         landmarker_path = os.path.join(current_dir, "model", "shape_predictor_81_face_landmarks.dat")
         self.predictor = dlib.shape_predictor(landmarker_path)
-        
-        self.stream = cv.VideoCapture(0)
+
+        self.mqtt_client = mqtt.Client(transport="websockets")
+        self.mqtt_client.username_pw_set("mqtt", "1234")
+        self.mqtt_client.connect("127.0.0.1", 9001)
+        self.mqtt_client.subscribe("/data/tx")
+        self.mqtt_client.on_message = self.on_message
+        self.mqtt_client.loop_start()
+        self.last_frame_time = None
+        self.frame_count = 0 
+        self.lock = threading.Lock()
+        self.last_ten_frames_time = deque(maxlen=100)
+        # self.stream = cv.VideoCapture(0)
         # self.stream = cv.VideoCapture("./video.avi")
         # print(f"Total frame: {self.stream.get(cv.CAP_PROP_FRAME_COUNT)}")
         
-        if not self.stream.isOpened():
-            self.stream.release()
-            raise IOError("No input stream")
+        # if not self.stream.isOpened():
+        #     self.stream.release()
+        #     raise IOError("No input stream")
 
-        self.fps = self.stream.get(cv.CAP_PROP_FPS)
+        # self.fps = self.stream.get(cv.CAP_PROP_FPS)
+        self.fps = 15
         self.QUEUE_MAX = 64
         self.QUEUE_WINDOWS = 32
         self.Queue_rawframe = Queue(maxsize=3)
@@ -122,9 +142,30 @@ class face2feature:
         self.capture_process_.start()
         self.roi_process_.start()
 
+    def on_message(self, client, userdata, msg):
+        frame_data_bytes = base64.b64decode(msg.payload)
+        nparr = np.frombuffer(frame_data_bytes, np.uint8)
+        frame = cv.imdecode(nparr, cv.IMREAD_COLOR)
+        self.status = frame is not None
+
+        with self.lock:
+            self.frame_count += 1  # increment the frame count
+            self.last_ten_frames_time.append(time.time())  # append the current timestamp to the deque
+            if len(self.last_ten_frames_time) > 100:  # if more than 10 timestamps are stored
+                self.last_ten_frames_time.popleft()  # remove the oldest timestamp
+            if len(self.last_ten_frames_time) == 100:  # if exactly 10 timestamps are stored
+                time_diff = self.last_ten_frames_time[-1] - self.last_ten_frames_time[0]  # time difference between the newest and oldest frame
+                self.fps = len(self.last_ten_frames_time) / time_diff  # calculate fps
+
+        if self.Queue_rawframe.full():
+            self.Queue_rawframe.get_nowait()
+        self.Queue_rawframe.put_nowait(frame)
+
     def capture_process(self):
         while self.working:
-            self.status, frame = self.stream.read()
+            # self.status, frame = self.stream.read()
+            
+            frame = self.Queue_rawframe.get()
             self.frame_display = copy.copy(frame)
 
             if self.Queue_Time.full():
@@ -132,19 +173,19 @@ class face2feature:
                 # self.fps = 1 / \
                 #     np.mean(np.diff(np.array(list(self.Queue_Time.queue))))
             
-            if not self.status:
-                self.working = False
-                break
+            # if not self.status:
+            #     self.working = False
+            #     break
 
-            if self.Queue_rawframe.full():
-                self.Queue_rawframe.get_nowait()
-            else:
-                self.Queue_Time.put_nowait(time.time())
+            # if self.Queue_rawframe.full():
+            #     self.Queue_rawframe.get_nowait()
+            # else:
+            #     self.Queue_Time.put_nowait(time.time())
             
-            try:
-                self.Queue_rawframe.put_nowait(frame)
-            except Exception as e:
-                pass
+            # try:
+            #     self.Queue_rawframe.put_nowait(frame)
+            # except Exception as e:
+            #     pass
     
     def roi_process(self):
         print('roi_process activated......')
@@ -160,8 +201,8 @@ class face2feature:
                 self.hist_l = RGB_hist(roi_l)
                 self.hist_r = RGB_hist(roi_r)
                 self.hist_f = RGB_hist(roi_f)
-                print(self.Queue_signal_l.qsize(), self.Queue_signal_r.qsize(), self.Queue_signal_f.qsize())
-                print(self.flag_queue)
+                # print(self.Queue_signal_l.qsize(), self.Queue_signal_r.qsize(), self.Queue_signal_f.qsize())
+                # print(self.flag_queue)
                 if self.Queue_signal_l.full():
                     self.signal_l = copy.copy(list(self.Queue_signal_l.queue))
                     self.Queue_signal_l.get_nowait()

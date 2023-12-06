@@ -14,6 +14,12 @@ from core import feature2rppg
 from utils import butterworth_filter
 import matplotlib.pyplot as plt
 
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+import os
+import django
+import sys
+
 MIN_HZ = 0.8
 MAX_HZ = 2.5
 
@@ -32,6 +38,16 @@ class Main():
 
         self.bpm_f, self.bpm_l, self.bpm_r, self.bpm_avg = 60, 60, 60, 60
         self.conf_f, self.conf_l, self.conf_r = 1, 1, 1
+        self.start_time = time.time()
+
+        current_directory = os.path.dirname(os.path.abspath(__file__))
+        parent_directory = os.path.dirname(current_directory)
+        django_project_directory = os.path.join(parent_directory, 'server')
+        print(django_project_directory)
+        sys.path.insert(0, django_project_directory)
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'server.settings')
+        django.setup()
+        self.channel_layer = get_channel_layer()
 
     def DisplayBpm(self):
         signal_f = np.array(self.processor.feature.signal_f)
@@ -69,7 +85,21 @@ class Main():
         self.weight_r = self.conf_r / self.total_conf
 
         self.bpm_avg = self.bpm_f * self.weight_f + self.bpm_l * self.weight_l + self.bpm_r * self.weight_r
-        print(self.bpm_avg)
+
+        current_time = time.time()
+        elapsed_time = current_time - self.start_time
+        if elapsed_time >= 2:
+            async_to_sync(self.channel_layer.group_send)(
+                "video",
+                {
+                    "type": "video.hr",
+                    "hr": self.bpm_avg,
+                }
+            )
+            print("bpm ", self.bpm_avg)
+            self.start_time = current_time
+        
+
 
 if __name__ == "__main__":
     main = Main()
