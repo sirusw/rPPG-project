@@ -86,7 +86,9 @@ class feature2rppg:
 class face2feature:
     def __init__(self) -> None:
         self.detector = dlib.get_frontal_face_detector()
-        self.predictor = dlib.shape_predictor(r"/Users/zihan/Documents/hku/aiot/group proj/rPPG-project/model/shape_predictor_81_face_landmarks.dat")
+        current_dir = os.path.dirname(__file__)
+        landmarker_path = os.path.join(current_dir, "model", "shape_predictor_81_face_landmarks.dat")
+        self.predictor = dlib.shape_predictor(landmarker_path)
         
         self.stream = cv.VideoCapture(0)
         # self.stream = cv.VideoCapture("./video.avi")
