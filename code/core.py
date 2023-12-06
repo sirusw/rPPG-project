@@ -24,8 +24,8 @@ sns.set()
 
 class feature2rppg:
     def __init__(self) -> None:
-        self.feature = face2feature()
         self.working = True
+        self.feature = face2feature()
     
     def streaming(self):
         self.feature.streaming()
@@ -86,7 +86,7 @@ class feature2rppg:
 class face2feature:
     def __init__(self) -> None:
         self.detector = dlib.get_frontal_face_detector()
-        self.predictor = dlib.shape_predictor("./model/shape_predictor_81_face_landmarks.dat")
+        self.predictor = dlib.shape_predictor(r"/Users/zihan/Documents/hku/aiot/group proj/rPPG-project/model/shape_predictor_81_face_landmarks.dat")
         
         self.stream = cv.VideoCapture(0)
         # self.stream = cv.VideoCapture("./video.avi")
@@ -127,8 +127,8 @@ class face2feature:
 
             if self.Queue_Time.full():
                 self.Queue_Time.get_nowait()
-                self.fps = 1 / \
-                    np.mean(np.diff(np.array(list(self.Queue_Time.queue))))
+                # self.fps = 1 / \
+                #     np.mean(np.diff(np.array(list(self.Queue_Time.queue))))
             
             if not self.status:
                 self.working = False
@@ -145,6 +145,7 @@ class face2feature:
                 pass
     
     def roi_process(self):
+        print('roi_process activated......')
         while self.working:
             try: 
                 frame = self.Queue_rawframe.get_nowait()
@@ -152,30 +153,31 @@ class face2feature:
                 continue
 
             roi_l, roi_r, roi_f = self.roi(frame)
-
+            
             if roi_l is not None and roi_r is not None and roi_f is not None:
                 self.hist_l = RGB_hist(roi_l)
                 self.hist_r = RGB_hist(roi_r)
                 self.hist_f = RGB_hist(roi_f)
-
+                print(self.Queue_signal_l.qsize(), self.Queue_signal_r.qsize(), self.Queue_signal_f.qsize())
+                print(self.flag_queue)
                 if self.Queue_signal_l.full():
                     self.signal_l = copy.copy(list(self.Queue_signal_l.queue))
                     self.Queue_signal_l.get_nowait()
-                    self.flag_Queue = True
+                    self.flag_queue = True
                 else:
                     self.flag_queue = False
 
                 if self.Queue_signal_r.full():
                     self.signal_r = copy.copy(list(self.Queue_signal_r.queue))
                     self.Queue_signal_r.get_nowait()
-                    self.flag_Queue = True
+                    self.flag_queue = True
                 else:
                     self.flag_queue = False
                 
                 if self.Queue_signal_f.full():
                     self.signal_f = copy.copy(list(self.Queue_signal_f.queue))
                     self.Queue_signal_f.get_nowait()
-                    self.flag_Queue = True
+                    self.flag_queue = True
                 else:
                     self.flag_queue = False
 
@@ -184,6 +186,7 @@ class face2feature:
                 self.Queue_signal_f.put_nowait(Hist2Feature(self.hist_f))
             
             else:
+                print('Data is cleared')
                 self.hist_l, self.hist_r, self.hist_f = None, None, None
                 self.Queue_signal_l.queue.clear()
                 self.Queue_signal_r.queue.clear()

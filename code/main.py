@@ -17,6 +17,13 @@ import matplotlib.pyplot as plt
 MIN_HZ = 0.8
 MAX_HZ = 2.5
 
+def butterworth_filter(stream, low, high, sample_rate, order=11):
+    nyquist_rate = sample_rate * 0.5
+    low /= nyquist_rate
+    high /= nyquist_rate
+    b, a = signal.butter(order, [low, high], btype='band')
+    return signal.lfilter(b, a, stream)
+
 class Main():
     def __init__(self):
         self.processor = feature2rppg()
@@ -30,6 +37,7 @@ class Main():
         signal_f = np.array(self.processor.feature.signal_f)
         signal_l = np.array(self.processor.feature.signal_l)
         signal_r = np.array(self.processor.feature.signal_r)
+        # print('size of signal_f: ', signal_f.shape)
 
         if self.processor.feature.flag_queue:
             self.bvp_f = self.mode(signal_f)
@@ -61,10 +69,11 @@ class Main():
         self.weight_r = self.conf_r / self.total_conf
 
         self.bpm_avg = self.bpm_f * self.weight_f + self.bpm_l * self.weight_l + self.bpm_r * self.weight_r
+        print(self.bpm_avg)
 
 if __name__ == "__main__":
     main = Main()
     while True:
         bpm = main.DisplayBpm()
-        print(main.processor.feature.flag_queue)
-        print(main.bpm_avg)
+        # print(main.processor.feature.flag_queue)
+        # print(main.bpm_avg)
