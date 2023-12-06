@@ -16,6 +16,8 @@ from scipy import signal
 from sklearn.decomposition import PCA
 
 from utils import RGB_hist, Hist2Feature
+from options import get_options
+kwargs = get_options()
 
 import seaborn as sns
 sns.set()
@@ -76,7 +78,7 @@ class feature2rppg:
         return signal[:, 1]
     
     def transfer2bpm(self, raw_bpm, spec, fps):
-        return 0.95 * raw_bpm + np.argmax(spec[:int(len(spec)/2)]) * fps * 60 * 0.05
+        return 0.95 * raw_bpm + 0.05 * np.argmax(spec[:int(len(spec)/2)]) * fps * 60
     
     def __del__(self):
         self.working = False
@@ -99,13 +101,10 @@ class face2feature:
         self.Queue_Time = Queue(maxsize=self.QUEUE_WINDOWS)
 
         self.working, self.flag_face, self.flag_queue = False, False, False
-        self.sig_left, self.sig_right, self.fore = None, None, None
+        self.sig_left, self.sig_right, self.sig_fore = None, None, None
 
-    def capture_process(self):
-        while self.working:
-            _, frame = self.stream.read()
-            self.Queue_rawframe.put(frame)
-
+        self.face_mask = None
+        self.frame_display = None
 
     def streaming(self):
         self.working = True
@@ -119,10 +118,12 @@ class face2feature:
         while self.working:
             self.status, frame = self.stream.read()
             self.frame_display = copy.copy(frame)
+
             if self.Queue_Time.full():
                 self.Queue_Time.get_nowait()
                 self.fps = 1 / \
                     np.mean(np.diff(np.array(list(self.Queue_Time.queue))))
+            
             if not self.status:
                 self.working = False
                 break
@@ -130,8 +131,8 @@ class face2feature:
             if self.Queue_rawframe.full():
                 self.Queue_rawframe.get_nowait()
             else:
-                self.Queue_rawframe.put_nowait(time.time())
-
+                self.Queue_Time.put_nowait(time.time())
+            
             try:
                 self.Queue_rawframe.put_nowait(frame)
             except Exception as e:
@@ -143,6 +144,7 @@ class face2feature:
                 frame = self.Queue_rawframe.get_nowait()
             except Exception as e:
                 continue
+
             roi_l, roi_r, roi_f = self.roi(frame)
 
             if roi_l is not None and roi_r is not None and roi_f is not None:
@@ -163,7 +165,7 @@ class face2feature:
                     self.flag_queue = False
                 
                 if self.Queue_Sig_fore.full():
-                    self.fore = copy.copy(list(self.Queue_Sig_fore.queue))
+                    self.sig_fore = copy.copy(list(self.Queue_Sig_fore.queue))
                     self.Queue_Sig_fore.get_nowait()
                     self.Flag_Queue = True
                 else:
@@ -181,11 +183,11 @@ class face2feature:
 
 
     def marker(self, frame):
-        frame_grey = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-        faces = self.detector(frame_grey)
+        frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+        faces = self.detector(frame_gray)
         if len(faces) == 1:
             face = faces[0]
-            landmarks = [(p.x, p.y) for p in self.predictor(frame_grey, face).parts()]
+            landmarks = [[p.x, p.y] for p in self.predictor(frame_gray, face).parts()]
         try:
             return landmarks
         except:
@@ -210,8 +212,9 @@ class face2feature:
                 [landmark[i] for i in cheek_l], np.int32).reshape((-1, 1, 2))
             pts_r = np.array(
                 [landmark[i] for i in cheek_r], np.int32).reshape((-1, 1, 2))
-            pts_f = np.array([landmark[i]
-                                 for i in forehead], np.int32).reshape((-1, 1, 2))
+            pts_f = np.array(
+                [landmark[i] for i in forehead], np.int32).reshape((-1, 1, 2))
+            
             mask_l = cv.fillPoly(mask_l, [pts_l], (255, 255, 255))
             mask_r = cv.fillPoly(mask_r, [pts_r], (255, 255, 255))
             mask_f = cv.fillPoly(mask_f, [pts_f], (255, 255, 255))

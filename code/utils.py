@@ -2,10 +2,18 @@ import base64
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy import signal
 import cv2 as cv
 
 import options
 kwargs = options.get_options()
+
+def butterworth_filter(signal, low, high, sample_rate, order=11):
+    nyquist_rate = sample_rate * 0.5
+    low /= nyquist_rate
+    high /= nyquist_rate
+    b, a = signal.butter(order, [low, high], btype='band')
+    return signal.lfilter(b, a, signal)
 
 def RGB_hist(roi):
     b_hist = cv.calcHist([roi], [0], None, [256], [0, 256])
@@ -26,7 +34,7 @@ def RGB_hist(roi):
 
     return [r_hist, g_hist, b_hist]
 
-def Hist2Feature(self, hist):
+def Hist2Feature(hist):
     hist_r = hist[0]
     hist_g = hist[1]
     hist_b = hist[2]
