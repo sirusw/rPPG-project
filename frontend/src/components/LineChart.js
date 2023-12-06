@@ -4,14 +4,21 @@ import { Chart, CategoryScale, LinearScale, LineElement, PointElement, LineContr
 
 Chart.register(CategoryScale, LinearScale, LineElement, PointElement, LineController);
 
-const LineChart = ({heartRate}) => {
+const LineChart = ({ heartRate }) => {
   const [dataPoints, setDataPoints] = useState([]);
 
   // Function to add data
   const addDataPoint = (data) => {
+    // setDataPoints(prevDataPoints => {
+    //   if (prevDataPoints.length >= 10) {
+    //     return [data]; // Reset the data array when it reaches 11 points
+    //   } else {
+    //     return [...prevDataPoints, data];
+    //   }
+    // });
     setDataPoints(prevDataPoints => {
       if (prevDataPoints.length >= 10) {
-        return [data]; // Reset the data array when it reaches 11 points
+        return [...prevDataPoints.slice(1), data];
       } else {
         return [...prevDataPoints, data];
       }
@@ -19,11 +26,6 @@ const LineChart = ({heartRate}) => {
   };
 
   useEffect(() => {
-    // const intervalId = setInterval(() => {
-    //   addDataPoint(heartRate);
-    // }, 3000);
-
-    // return () => clearInterval(intervalId); // Clean up on unmount
     addDataPoint(heartRate);
   }, [heartRate]);
 
@@ -48,11 +50,14 @@ const LineChart = ({heartRate}) => {
         beginAtZero: true,
       },
     },
+    maintainAspectRatio: false
   };
 
   return (
-    <div style={{ width: '640px', height: '480px', marginTop: '100px', marginLeft: '50px'}}>
-      <Line data={data} options={options} />
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
+      <div style={{ flex: '1 1 auto', overflow: 'auto' }}>
+        <Line data={data} options={options} />
+      </div>
     </div>
   );
 };

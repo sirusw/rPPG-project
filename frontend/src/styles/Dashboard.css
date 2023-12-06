@@ -1,0 +1,17 @@
+.heart {
+    font-size: 70px;
+    color: red;
+    animation: pop 1s ease;
+  }
+  
+  @keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+
+@import url('https://fonts.googleapis.com/css2?family=Hedvig+Letters+Serif&display=swap');
+
+h1, h2, h3, h4, h5, h6, p, a, li, ul, ol, span, div, input, textarea, button, label, select, option, form, fieldset, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, footer, header, nav, section, time, mark, audio, video, canvas, details, summary, figcaption, figure, menu, menuitem, summary {
+font-family: 'Hedvig Letters Serif', sans-serif;
+}

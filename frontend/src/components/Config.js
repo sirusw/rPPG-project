@@ -1,10 +1,11 @@
 import React from 'react';
 import { Select, Row, Col, Slider, Switch } from 'antd';
 import { useState, useEffect } from 'react';
-import MQTTVideo from './MQTTVideo';
+import '../styles/Config.css';
 import { debounce, set } from 'lodash';
 import { sendApiRequest, sendSyncRequest } from '../api/api.js';
-const Config = ({ socket }) => {
+
+const Config = ({style}) => {
     const [resInput, setResInput] = useState(5);
     const [qualityInput, setQualityInput] = useState(8);
     const [brightnessInput, setBrightnessInput] = useState(0);
@@ -282,22 +283,18 @@ const Config = ({ socket }) => {
         }
     }, [response])
 
-    if (wsHasData && response) {
+    if (response) {
         console.log(response);
         return (
-            <>
-                {loading && <p>Syncing parameters...</p>}
-                {synced && <p>Parameters synced!</p>}
-
-                <div style={{ marginTop: '50px' }}>
-                    <Row gutter={16} key={key}>
-                        <Col span={12}>
+            <div style={{ ...style, height: '100%', borderRadius: '100px' }}>
+                <div style={{ marginLeft:'3%', marginRight:'3%', alignContent: 'center', width: '100%', marginTop: '30px' }} key={key}>
+                        <Col span={24}>
                             <Row gutter={16}>
-                                <Col span={8}><h3>Camera resolution</h3></Col>
-                                <Col span={16} style={{ display: 'flex', alignContent: 'center' }}>
+                                <Col span={8}><h4>Camera resolution</h4></Col>
+                                <Col span={16} style={{ display: 'flex', alignContent: 'center', justifyContent: 'center' }}>
                                     <Select
                                         defaultValue='5'
-                                        style={{ width: 300, height: 40 }} // Increase width and height
+                                        style={{ width: 150, height: 40 }} // Increase width and height
                                         onChange={onResChange}
                                         options={[
                                             { value: '0', label: '96x96' },
@@ -314,7 +311,7 @@ const Config = ({ socket }) => {
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8}><h3>Camera quality</h3></Col>
+                                <Col span={8}><h4>Camera quality</h4></Col>
                                 <Col span={16} style={{ display: 'flex', justifyContent: 'center', alignContent: 'center' }}>
                                     <div style={{ display: 'flex' }}>
                                         <p>4</p>
@@ -323,14 +320,14 @@ const Config = ({ socket }) => {
                                             max={63}
                                             onChange={onQualityChange}
                                             value={typeof qualityInput === 'number' ? qualityInput : 0}
-                                            style={{ width: 300, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
+                                            style={{ width: 150, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
                                         />
                                         <p>63</p>
                                     </div>
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8}><h3>Brightness</h3></Col>
+                                <Col span={8}><h4>Brightness</h4></Col>
                                 <Col span={16} style={{ display: 'flex', justifyContent: 'center', alignContent: 'center' }}>
                                     <div style={{ display: 'flex' }}>
                                         <p>-2</p>
@@ -339,14 +336,14 @@ const Config = ({ socket }) => {
                                             max={2}
                                             onChange={onBrightnessChange}
                                             value={typeof brightnessInput === 'number' ? brightnessInput : 0}
-                                            style={{ width: 300, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
+                                            style={{ width: 150, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
                                         />
                                         <p>2</p>
                                     </div>
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8}><h3>Contrast</h3></Col>
+                                <Col span={8}><h4>Contrast</h4></Col>
                                 <Col span={16} style={{ display: 'flex', justifyContent: 'center', alignContent: 'center' }}>
                                     <div style={{ display: 'flex' }}>
                                         <p>-2</p>
@@ -355,14 +352,14 @@ const Config = ({ socket }) => {
                                             max={2}
                                             onChange={onContrastChange}
                                             value={typeof contrastInput === 'number' ? contrastInput : 0}
-                                            style={{ width: 300, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
+                                            style={{ width: 150, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
                                         />
                                         <p>2</p>
                                     </div>
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8}><h3>Saturation</h3></Col>
+                                <Col span={8}><h4>Saturation</h4></Col>
                                 <Col span={16} style={{ display: 'flex', justifyContent: 'center', alignContent: 'center' }}>
                                     <div style={{ display: 'flex' }}>
                                         <p>-2</p>
@@ -371,18 +368,18 @@ const Config = ({ socket }) => {
                                             max={2}
                                             onChange={onSaturationChange}
                                             value={typeof saturationInput === 'number' ? saturationInput : 0}
-                                            style={{ width: 300, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
+                                            style={{ width: 150, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
                                         />
                                         <p>2</p>
                                     </div>
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}><h3>Special Effect</h3></Col>
-                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                <Col span={8} style={{ display: 'flex', alignContent: 'center', justifyContent: 'center' }}><h4>Special Effect</h4></Col>
+                                <Col span={16} style={{ display: 'flex', alignContent: 'center', justifyContent: 'center' }}>
                                     <Select
                                         defaultValue='0'
-                                        style={{ width: 300, height: 40 }} // Increase width and height
+                                        style={{ width: 150, height: 40 }} // Increase width and height
                                         onChange={onSEChange}
                                         options={[
                                             { value: '0', label: 'No Effect' },
@@ -397,27 +394,27 @@ const Config = ({ socket }) => {
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
-                                    <h3>AWB</h3>
+                                <Col span={8} style={{ display: 'flex', alignContent: 'center', justifyContent: 'center' }}>
+                                    <h4>AWB</h4>
                                 </Col>
-                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <Switch onChange={onAwbChange} defaultChecked />
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
-                                    <h3>AWB Gain</h3>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <h4>AWB Gain</h4>
                                 </Col>
-                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <Switch onChange={onAwbGainChange} defaultChecked />
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}><h3>WB Mode</h3></Col>
-                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><h4>WB Mode</h4></Col>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <Select
                                         defaultValue='0'
-                                        style={{ width: 300, height: 40 }} // Increase width and height
+                                        style={{ width: 150, height: 40 }} // Increase width and height
                                         onChange={onWbModeChange}
                                         options={[
                                             { value: '0', label: 'Auto' },
@@ -430,23 +427,23 @@ const Config = ({ socket }) => {
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
-                                    <h3>AEC Sensor</h3>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <h4>AEC Sensor</h4>
                                 </Col>
-                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <Switch onChange={onAecChange} defaultChecked />
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
-                                    <h3>AEC DSP</h3>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <h4>AEC DSP</h4>
                                 </Col>
-                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <Switch onChange={onAecDSPChange} />
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8}><h3>AE Level</h3></Col>
+                                <Col span={8}><h4>AE Level</h4></Col>
                                 <Col span={16} style={{ display: 'flex', justifyContent: 'center', alignContent: 'center' }}>
                                     <div style={{ display: 'flex' }}>
                                         <p>-2</p>
@@ -455,22 +452,22 @@ const Config = ({ socket }) => {
                                             max={2}
                                             onChange={onAeLevelChange}
                                             value={typeof aeLevelInput === 'number' ? aeLevelInput : 0}
-                                            style={{ width: 300, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
+                                            style={{ width: 150, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
                                         />
                                         <p>2</p>
                                     </div>
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
-                                    <h3>AGC</h3>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <h4>AGC</h4>
                                 </Col>
-                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <Switch onChange={onAgcChange} defaultChecked />
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8}><h3>Gain Ceiling</h3></Col>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><h4>Gain Ceiling</h4></Col>
                                 <Col span={16} style={{ display: 'flex', justifyContent: 'center', alignContent: 'center' }}>
                                     <div style={{ display: 'flex' }}>
                                         <p>2x</p>
@@ -479,70 +476,70 @@ const Config = ({ socket }) => {
                                             max={6}
                                             onChange={onGainCeilChange}
                                             value={typeof gainCeilInput === 'number' ? gainCeilInput : 0}
-                                            style={{ width: 300, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
+                                            style={{ width: 150, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
                                         />
                                         <p>128x</p>
                                     </div>
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
-                                    <h3>BPC</h3>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <h4>BPC</h4>
                                 </Col>
-                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <Switch onChange={onBpcChange} />
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
-                                    <h3>WPC</h3>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center'  }}>
+                                    <h4>WPC</h4>
                                 </Col>
-                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center'  }}>
                                     <Switch onChange={onWpcChange} defaultChecked />
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
-                                    <h3>Raw GMA</h3>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center'  }}>
+                                    <h4>Raw GMA</h4>
                                 </Col>
-                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center'  }}>
                                     <Switch onChange={onRawGMAChange} defaultChecked />
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}>
-                                    <h3>LENC</h3>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center'  }}>
+                                    <h4>LENC</h4>
                                 </Col>
-                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center'  }}>
                                     <Switch onChange={onLencChange} defaultChecked />
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}><h3>HMirror</h3></Col>
-                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center'  }}><h4>HMirror</h4></Col>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center'  }}>
                                     <Switch onChange={onHmirrorChange} />
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}><h3>VFlip</h3></Col>
-                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center'  }}><h4>VFlip</h4></Col>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center'  }}>
                                     <Switch onChange={onVflipChange} />
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}><h3>DCW</h3></Col>
-                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center'  }}><h4>DCW</h4></Col>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center'  }}>
                                     <Switch onChange={onDcwChange} defaultChecked />
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8} style={{ display: 'flex', alignItems: 'center' }}><h3>Colorbar</h3></Col>
-                                <Col span={16} style={{ display: 'flex', alignItems: 'center' }}>
+                                <Col span={8} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center'  }}><h4>Colorbar</h4></Col>
+                                <Col span={16} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center'  }}>
                                     <Switch onChange={onColorbarChange} />
                                 </Col>
                             </Row>
                             <Row gutter={16}>
-                                <Col span={8}><h3>LED Intensity</h3></Col>
+                                <Col span={8}><h4>LED Intensity</h4></Col>
                                 <Col span={16} style={{ display: 'flex', justifyContent: 'center', alignContent: 'center' }}>
                                     <div style={{ display: 'flex' }}>
                                         <p>0</p>
@@ -551,24 +548,20 @@ const Config = ({ socket }) => {
                                             max={255}
                                             onChange={onLedIntensityChange}
                                             value={typeof ledIntensityInput === 'number' ? ledIntensityInput : 0}
-                                            style={{ width: 300, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
+                                            style={{ width: 150, height: 40, marginLeft: '20px', marginRight: '20px' }} // Increase width and height
                                         />
                                         <p>255</p>
                                     </div>
                                 </Col>
                             </Row>
                         </Col>
-                        <Col span={12}>
-                            <MQTTVideo updateWsHasData={updateWsHasData} mode={2} socket={socket} />
-                        </Col>
-                    </Row>
                 </div>
-            </>
+            </div>
         );
     }
     else {
         return (
-            <h1>No data from ESP32!</h1>
+            <h4>No data from ESP32 or configuration not synced!</h4>
         );
     }
 
