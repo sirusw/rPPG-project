@@ -90,6 +90,10 @@ class face2feature:
         self.predictor = dlib.shape_predictor("./model/shape_predictor_81_face_landmarks.dat")
         
         self.stream = cv.VideoCapture(0)
+        if not self.stream.isOpened():
+            self.stream.release()
+            raise IOError("No input stream")
+
         self.fps = self.stream.get(cv.CAP_PROP_FPS)
         self.QUEUE_MAX = 256
         self.QUEUE_WINDOWS = 64
