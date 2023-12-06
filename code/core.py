@@ -97,7 +97,7 @@ class face2feature:
             raise IOError("No input stream")
 
         self.fps = self.stream.get(cv.CAP_PROP_FPS)
-        self.QUEUE_MAX = 256
+        self.QUEUE_MAX = 64
         self.QUEUE_WINDOWS = 32
         self.Queue_rawframe = Queue(maxsize=3)
 

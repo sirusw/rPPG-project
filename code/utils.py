@@ -5,15 +5,15 @@ import numpy as np
 from scipy import signal
 import cv2 as cv
 
-import options
+import options  
 kwargs = options.get_options()
 
-def butterworth_filter(signal, low, high, sample_rate, order=11):
+def butterworth_filter(stream, low, high, sample_rate, order=11):
     nyquist_rate = sample_rate * 0.5
     low /= nyquist_rate
     high /= nyquist_rate
     b, a = signal.butter(order, [low, high], btype='band')
-    return signal.lfilter(b, a, signal)
+    return signal.lfilter(b, a, stream)
 
 def RGB_hist(roi):
     b_hist = cv.calcHist([roi], [0], None, [256], [0, 256])
