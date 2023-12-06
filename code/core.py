@@ -99,7 +99,7 @@ class face2feature:
 
         self.fps = self.stream.get(cv.CAP_PROP_FPS)
         self.QUEUE_MAX = 256
-        self.QUEUE_WINDOWS = 64
+        self.QUEUE_WINDOWS = 32
         self.Queue_rawframe = Queue(maxsize=3)
 
         self.Queue_Sig_left = Queue(maxsize=self.QUEUE_MAX)
@@ -162,19 +162,21 @@ class face2feature:
                 if self.Queue_Sig_left.full():
                     self.sig_left = copy.copy(list(self.Queue_Sig_left.queue))
                     self.Queue_Sig_left.get_nowait()
+                    self.flag_Queue = True
                 else:
                     self.flag_queue = False
 
                 if self.Queue_Sig_right.full():
                     self.sig_right = copy.copy(list(self.Queue_Sig_right.queue))
                     self.Queue_Sig_right.get_nowait()
+                    self.flag_Queue = True
                 else:
                     self.flag_queue = False
                 
                 if self.Queue_Sig_fore.full():
                     self.sig_fore = copy.copy(list(self.Queue_Sig_fore.queue))
                     self.Queue_Sig_fore.get_nowait()
-                    self.Flag_Queue = True
+                    self.flag_Queue = True
                 else:
                     self.flag_queue = False
 
