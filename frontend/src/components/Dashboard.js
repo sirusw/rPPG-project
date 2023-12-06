@@ -147,8 +147,8 @@ const Dashboard = ({ socket }) => {
                             </div>
                         </Col>
                     </Row>
-                    <Row style={{ height: '70%', }}>
-                        <Card style={{ height: '95%', width: '95%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <Row style={{ height: '70%', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+                        <Card style={{ height: '98%', width: '98%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                             <Row justify="center" align="middle" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
                                 <Col span={24}>
                                     <Row justify="center" gutter={[16, 16]}>
