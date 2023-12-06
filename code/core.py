@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from obspy.signal.detrend import polynomial, spline
 from scipy import signal
-from sklearn.decomposition import PCA
 
 from utils import RGB_hist, Hist2Feature
 from options import get_options
@@ -68,7 +67,7 @@ class feature2rppg:
         Y_comp = 1.5 * X[:, 0] + X[:, 1] - 1.5 * X[:, 2]
         sX, sY = np.std(X_comp), np.std(Y_comp)
         alpha = sX / sY
-        
+
         return X_comp - alpha * Y_comp
     
     def Green_red(self, signal):
@@ -102,13 +101,13 @@ class face2feature:
         self.QUEUE_WINDOWS = 32
         self.Queue_rawframe = Queue(maxsize=3)
 
-        self.Queue_Sig_left = Queue(maxsize=self.QUEUE_MAX)
-        self.Queue_Sig_right = Queue(maxsize=self.QUEUE_MAX)
-        self.Queue_Sig_fore = Queue(maxsize=self.QUEUE_MAX)
+        self.Queue_signal_l = Queue(maxsize=self.QUEUE_MAX)
+        self.Queue_signal_r = Queue(maxsize=self.QUEUE_MAX)
+        self.Queue_signal_f = Queue(maxsize=self.QUEUE_MAX)
         self.Queue_Time = Queue(maxsize=self.QUEUE_WINDOWS)
 
         self.working, self.flag_face, self.flag_queue = False, False, False
-        self.sig_left, self.sig_right, self.sig_fore = None, None, None
+        self.signal_l, self.signal_r, self.signal_f = None, None, None
 
         self.face_mask = None
         self.frame_display = None
@@ -159,36 +158,36 @@ class face2feature:
                 self.hist_r = RGB_hist(roi_r)
                 self.hist_f = RGB_hist(roi_f)
 
-                if self.Queue_Sig_left.full():
-                    self.sig_left = copy.copy(list(self.Queue_Sig_left.queue))
-                    self.Queue_Sig_left.get_nowait()
+                if self.Queue_signal_l.full():
+                    self.signal_l = copy.copy(list(self.Queue_signal_l.queue))
+                    self.Queue_signal_l.get_nowait()
                     self.flag_Queue = True
                 else:
                     self.flag_queue = False
 
-                if self.Queue_Sig_right.full():
-                    self.sig_right = copy.copy(list(self.Queue_Sig_right.queue))
-                    self.Queue_Sig_right.get_nowait()
+                if self.Queue_signal_r.full():
+                    self.signal_r = copy.copy(list(self.Queue_signal_r.queue))
+                    self.Queue_signal_r.get_nowait()
                     self.flag_Queue = True
                 else:
                     self.flag_queue = False
                 
-                if self.Queue_Sig_fore.full():
-                    self.sig_fore = copy.copy(list(self.Queue_Sig_fore.queue))
-                    self.Queue_Sig_fore.get_nowait()
+                if self.Queue_signal_f.full():
+                    self.signal_f = copy.copy(list(self.Queue_signal_f.queue))
+                    self.Queue_signal_f.get_nowait()
                     self.flag_Queue = True
                 else:
                     self.flag_queue = False
 
-                self.Queue_Sig_left.put_nowait(Hist2Feature(self.hist_l))
-                self.Queue_Sig_right.put_nowait(Hist2Feature(self.hist_r))
-                self.Queue_Sig_fore.put_nowait(Hist2Feature(self.hist_f))
+                self.Queue_signal_l.put_nowait(Hist2Feature(self.hist_l))
+                self.Queue_signal_r.put_nowait(Hist2Feature(self.hist_r))
+                self.Queue_signal_f.put_nowait(Hist2Feature(self.hist_f))
             
             else:
                 self.hist_l, self.hist_r, self.hist_f = None, None, None
-                self.Queue_Sig_left.queue.clear()
-                self.Queue_Sig_right.queue.clear()
-                self.Queue_Sig_fore.queue.clear()
+                self.Queue_signal_l.queue.clear()
+                self.Queue_signal_r.queue.clear()
+                self.Queue_signal_f.queue.clear()
 
 
     def marker(self, frame):

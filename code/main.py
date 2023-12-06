@@ -27,9 +27,9 @@ class Main():
         self.conf_f, self.conf_l, self.conf_r = 1, 1, 1
 
     def DisplayBpm(self):
-        signal_f = np.array(self.processor.feature.sig_fore)
-        signal_l = np.array(self.processor.feature.sig_left)
-        signal_r = np.array(self.processor.feature.sig_right)
+        signal_f = np.array(self.processor.feature.signal_f)
+        signal_l = np.array(self.processor.feature.signal_l)
+        signal_r = np.array(self.processor.feature.signal_r)
 
         if self.processor.feature.flag_queue:
             self.bvp_f = self.mode(signal_f)
