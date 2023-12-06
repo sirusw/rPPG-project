@@ -2,43 +2,42 @@ import base64
 import os
 import matplotlib.pyplot as plt
 import numpy as np
-import cv2
+import cv2 as cv
 
 import options
 kwargs = options.get_options()
 
-def plot_data(x, y, title, xlabel, ylabel):
-    plt.figure()
-    plt.plot(x, y)
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.show()
+def RGB_hist(roi):
+    b_hist = cv.calcHist([roi], [0], None, [256], [0, 256])
+    g_hist = cv.calcHist([roi], [1], None, [256], [0, 256])
+    r_hist = cv.calcHist([roi], [2], None, [256], [0, 256])
 
-def read_base64(file_path):
-    frames = []
-    with open(file_path, 'r') as file:
-        for line in file:
-            # Remove new line symbol
-            line = line.strip()
-            # Decode Base64 frame
-            frame_data = base64.b64decode(line)
-            # Convert Bytes to Numpy Array
-            nparr = np.frombuffer(frame_data, np.uint8)
-            # Convert Numpy Array to Image
-            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            # Append frame to the list
-            frames.append(frame)
-    return frames
+    b_hist = np.reshape(b_hist, (256))
+    g_hist = np.reshape(g_hist, (256))
+    r_hist = np.reshape(r_hist, (256))
 
-def save(data, file: str):
-    if not os.path.exists(kwargs["save_path"]):
-        os.mkdir(kwargs["save_path"])
-    file_path = kwargs["save_path"] + file
-    np.save(file_path, data)
-    return file_path
+    b_hist[0] = 0
+    g_hist[0] = 0
+    r_hist[0] = 0
 
-if __name__ == "__main__":
-    text = b'binary\x00string'
-    output = base64.b64encode(text)
-    print(output)
+    r_hist = r_hist/np.sum(r_hist)
+    g_hist = g_hist/np.sum(g_hist)
+    b_hist = b_hist/np.sum(b_hist)
+
+    return [r_hist, g_hist, b_hist]
+
+def Hist2Feature(self, hist):
+    hist_r = hist[0]
+    hist_g = hist[1]
+    hist_b = hist[2]
+
+    hist_r /= np.sum(hist_r)
+    hist_g /= np.sum(hist_g)
+    hist_b /= np.sum(hist_b)
+
+    dens = np.arange(0, 256, 1)
+    mean_r = dens.dot(hist_r)
+    mean_g = dens.dot(hist_g)
+    mean_b = dens.dot(hist_b)
+
+    return [mean_r, mean_g, mean_b]
