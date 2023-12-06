@@ -10,6 +10,7 @@ import time
 import random
 import asyncio
 from threading import Thread, Lock
+from concurrent.futures import ThreadPoolExecutor
 
 class MQTTClient:
     _instance = None
@@ -31,6 +32,7 @@ class MQTTClient:
         self.frame_buffer = []
         self.frame_buffer_size = 30
         self.lock = Lock()
+        self.executor = ThreadPoolExecutor(max_workers=5)
 
     def rppg_fake_data(self, frame):
         def run_fake_data():
@@ -51,8 +53,8 @@ class MQTTClient:
                             "hr": heart_rate,
                         }
                     )
-
-        Thread(target=run_fake_data).start()
+        # Thread(target=run_fake_data).start()
+        self.executor.submit(run_fake_data)
 
     def on_connect(self, client, userdata, flags, rc):
         print("Connected to MQTT broker with result code "+str(rc))

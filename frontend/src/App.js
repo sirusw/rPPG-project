@@ -1,15 +1,21 @@
 import React, { useEffect } from 'react';
 import { useState } from 'react';
 import {
-  DesktopOutlined, SettingOutlined 
+  DesktopOutlined, SettingOutlined, MenuOutlined
 } from '@ant-design/icons';
-import { Select, Layout, Menu, theme, Typography } from 'antd';
-import MQTTVideo from './components/MQTTVideo';
+import { Select, Layout, Menu, theme, Button } from 'antd';
+import Dashboard from './components/Dashboard';
 import Config from './components/Config';
-import DeviceCam from './components/DeviceCam';
 import { setCsrfToken } from './api/api';
-const { Header, Content, Footer } = Layout;
+const { Header, Content, Footer, Sider } = Layout;
 
+const contentStyle = {
+  textAlign: 'center',
+  minHeight: 120,
+  lineHeight: '120px',
+  color: '#fff',
+  backgroundColor: '#108ee9',
+};
 
 function getItem(label, key, icon, children, type) {
   return {
@@ -36,14 +42,9 @@ const App = () => {
       const socketConnection = new WebSocket('ws://localhost:8000/ws/video/');
       setSocket(socketConnection);
     }
-  
-    return () => {
-      if (socket) {
-        socket.close();
-      }
-    };
-  }, [socket]);
-  
+  }
+    , []);
+
   const {
     token: { colorBgContainer },
   } = theme.useToken();
@@ -57,50 +58,14 @@ const App = () => {
       .then(data => console.log(data))
       .catch(error => console.error('Error:', error));
   }, []);
-  
-  let content;
-
-  if(selectedKey === '1') {
-    content = 
-    <div style={{height: '100%'}}>
-      {/* <div style={{ display: 'flex', alignItems: 'center' }}>
-        <Typography>
-          <h3>Camera selection:</h3>
-        </Typography>
-        <Select
-          defaultValue="device"
-          style={{ width: 180, marginLeft: 10 }}
-          onChange={(value) => setCamera(value)}
-          options={[
-            {
-              value: 'device',
-              label: 'Device Camera',
-            },
-            {
-              value: 'esp32',
-              label: 'Esp32 Camera',
-            },
-          ]}
-        />
-      </div> */}
-      {/* {camera === 'device' ? 
-        <DeviceCam socket={socket}/> : 
-        wsHasData ? */}
-      <MQTTVideo updateWsHasData={updateWsHasData} mode={1} socket={socket}/>
-        {/* : <h1>No data from ESP32!</h1>} */}
-      
-      </div>;
-  } else if(selectedKey === '2') {
-    content = <Config socket={socket}/>;
-  }
 
   useEffect(() => {
     setCamera('device');
   }
-  , [selectedKey]);
+    , [selectedKey]);
 
   return (
-    <Layout className="layout" style={{height: '100%'}}>
+    <Layout className="layout" style={{ height: '100vh' }}>
       <Header
         style={{
           display: 'flex',
@@ -109,26 +74,46 @@ const App = () => {
         }}
       >
         <div className="demo-logo" />
-        <Menu
+        {/* <Menu
           theme="dark"
           mode="horizontal"
           defaultSelectedKeys={['1']}
           disabledOverflow={true}
-          style={{height: 'auto', overflow: 'auto'}}
+          style={{ height: 'auto', overflow: 'auto' }}
           items={items}
           onClick={(e) => setSelectedKey(e.key)}
-        />
+        /> */}
+        <h1 style={{ fontFamily: 'Hedvig Letters Serif, serif', color: 'white' }}>Real-Time rPPG-based Heart Rate Monitoring Dashboard</h1>
       </Header>
       <Content
+        className="site-layout"
         style={{
           padding: '0 50px',
-          overflow: 'auto',
-          flex: '1 0 auto',
-          minHeight: 'calc(100vh - 150px)',
-          display: 'flex',
+          minHeight: 'calc(100vh - 200px)',
+          width: '100%',
+          height: '100%',
+          textAlign: 'center',
         }}
       >
-          {content}
+        <Layout style={{ padding: '15px 0', height: '100%', width: '100%' }}>
+          <Sider
+            style={{
+              background: colorBgContainer,
+              borderRight: '1px solid #e8e8e8',
+              alignContent: 'center',
+              alignItems: 'center',
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              height: '100%',
+              position: 'relative'
+            }}
+            width={'22%'}>
+            <Config />
+          </Sider>
+          <div style={{ height: '100%', width: '100%' }}>
+            <Dashboard socket={socket} />
+          </div>
+        </Layout>
       </Content>
       <Footer
         style={{
@@ -141,11 +126,13 @@ const App = () => {
         }}
       >
         <p style={{
-          justifyContent: 'center',
           display: 'flex',
-          alignItems: 'center'}}>
-            @2023 Created by Team 11 from COMP7310, HKU
-          </p>
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto'
+        }}>
+          @2023 Created by Team 11 from COMP7310, HKU
+        </p>
       </Footer>
     </Layout>
   );
