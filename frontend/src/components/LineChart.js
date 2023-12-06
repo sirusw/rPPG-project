@@ -9,16 +9,9 @@ const LineChart = ({ heartRate }) => {
 
   // Function to add data
   const addDataPoint = (data) => {
-    // setDataPoints(prevDataPoints => {
-    //   if (prevDataPoints.length >= 10) {
-    //     return [data]; // Reset the data array when it reaches 11 points
-    //   } else {
-    //     return [...prevDataPoints, data];
-    //   }
-    // });
     setDataPoints(prevDataPoints => {
       if (prevDataPoints.length >= 10) {
-        return [...prevDataPoints.slice(1), data];
+        return [data]; // Reset the data array when it reaches 11 points
       } else {
         return [...prevDataPoints, data];
       }
