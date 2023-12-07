@@ -105,5 +105,5 @@ if __name__ == "__main__":
     main = Main()
     while True:
         bpm = main.DisplayBpm()
-        print(main.processor.feature.flag_queue)
-        # print(main.bpm_avg)
+        # print(main.processor.feature.flag_queue)
+        print(main.bpm_avg)
