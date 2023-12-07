@@ -3,12 +3,8 @@ import argparse
 
 def get_options():
     parser = argparse.ArgumentParser()
-    
-    parser.add_argument('--path', type=str, default='./data/')
-    parser.add_argument('--mode', type=str, default='train')
-    parser.add_argument('--save', action='store_true')
-    parser.add_argument('--save_path', type=str, default='./save/') 
-                        
+    parser.add_argument('--model_path', type=str, default="./code/model/shape_predictor_81_face_landmarks.dat")
+    parser.add_argument('--bvp_range', type=str, default="./code/video/1.mp4")
     kwargs = parser.parse_args()
     return kwargs
 
