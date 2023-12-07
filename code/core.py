@@ -118,9 +118,9 @@ class face2feature:
         #     raise IOError("No input stream")
 
         # self.fps = self.stream.get(cv.CAP_PROP_FPS)
-        self.fps = 15
-        self.QUEUE_MAX = 64
-        self.QUEUE_WINDOWS = 32
+        self.fps = 18
+        self.QUEUE_MAX = 256
+        self.QUEUE_WINDOWS = 64
         self.Queue_rawframe = Queue(maxsize=3)
 
         self.Queue_signal_l = Queue(maxsize=self.QUEUE_MAX)
@@ -144,16 +144,16 @@ class face2feature:
 
     def on_message(self, client, userdata, msg):
         frame_data_bytes = base64.b64decode(msg.payload)
-        nparr = np.frombuffer(frame_data_bytes, np.uint8)
-        frame = cv.imdecode(nparr, cv.IMREAD_COLOR)
+        frame = np.frombuffer(frame_data_bytes, np.uint8)
+        frame = cv.imdecode(frame, cv.IMREAD_COLOR)
         self.status = frame is not None
 
         with self.lock:
             self.frame_count += 1  # increment the frame count
             self.last_ten_frames_time.append(time.time())  # append the current timestamp to the deque
-            if len(self.last_ten_frames_time) > 100:  # if more than 10 timestamps are stored
+            if len(self.last_ten_frames_time) > 100:  # if more than 100 timestamps are stored
                 self.last_ten_frames_time.popleft()  # remove the oldest timestamp
-            if len(self.last_ten_frames_time) == 100:  # if exactly 10 timestamps are stored
+            if len(self.last_ten_frames_time) == 100:  # if exactly 100 timestamps are stored
                 time_diff = self.last_ten_frames_time[-1] - self.last_ten_frames_time[0]  # time difference between the newest and oldest frame
                 self.fps = len(self.last_ten_frames_time) / time_diff  # calculate fps
 
@@ -206,14 +206,12 @@ class face2feature:
                 if self.Queue_signal_l.full():
                     self.signal_l = copy.copy(list(self.Queue_signal_l.queue))
                     self.Queue_signal_l.get_nowait()
-                    self.flag_queue = True
                 else:
                     self.flag_queue = False
 
                 if self.Queue_signal_r.full():
                     self.signal_r = copy.copy(list(self.Queue_signal_r.queue))
                     self.Queue_signal_r.get_nowait()
-                    self.flag_queue = True
                 else:
                     self.flag_queue = False
                 
