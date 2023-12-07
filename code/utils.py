@@ -8,7 +8,7 @@ import cv2 as cv
 import options  
 kwargs = options.get_options()
 
-def butterworth_filter(stream, low, high, sample_rate, order=11):
+def butterworth_filter(stream, low, high, sample_rate, order=5):
     nyquist_rate = sample_rate * 0.5
     low /= nyquist_rate
     high /= nyquist_rate
