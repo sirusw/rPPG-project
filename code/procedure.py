@@ -6,8 +6,15 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 import pyqtgraph as pg
 
+import os
+import sys
+import time
 import numpy as np
 import cv2 as cv
+
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+import django
 
 from core import feature2rppg
 from utils import butterworth_filter
@@ -168,6 +175,7 @@ class Procedure(QMainWindow, ui):
         self.Layout_Spec.addWidget(self.Spectrum_r)
 
         self.face.setScaledContents(True)
+
         self.processor = feature2rppg()
         self.processor.streaming()
 
@@ -192,6 +200,18 @@ class Procedure(QMainWindow, ui):
         self.Mode = self.ModeDict['CHROM']
         self.Data_ShowRaw = True
         self.slot_init()
+
+        self.start_time_hr = time.time()
+        self.start_time_sp = time.time()
+
+        current_directory = os.path.dirname(os.path.abspath(__file__))
+        parent_directory = os.path.dirname(current_directory)
+        django_project_directory = os.path.join(parent_directory, 'server')
+        print(django_project_directory)
+        sys.path.insert(0, django_project_directory)
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'server.settings')
+        django.setup()
+        self.channel_layer = get_channel_layer()
 
     def slot_init(self):
         self.TIMER_Frame.timeout.connect(self.DisplayImage)
@@ -251,6 +271,20 @@ class Procedure(QMainWindow, ui):
             self.Hist_r_r.clear()
             self.Hist_r_g.clear()
             self.Hist_r_b.clear()
+            
+        current_time_sp = time.time()
+        elapsed_time_sp = current_time_sp - self.start_time_sp
+        if elapsed_time_sp >= 2:
+            async_to_sync(self.channel_layer.group_send)(
+                "video",
+                {
+                    "type": "video.sp",
+                    "sp_f": self.Hist_f,
+                    "sp_l": self.Hist_l,
+                    "sp_r": self.Hist_r,
+                }
+            )
+            self.start_time_sp = current_time_sp
 
     def DisplaySignal(self):
         Sig_f = np.array(self.processor.series_class.Sig_f)
@@ -310,15 +344,28 @@ class Procedure(QMainWindow, ui):
                 self.Spec_r.setData([0], [0])
                 
             self.total_conf = self.conf_f+self.conf_l+self.conf_r
-            self.confidence_f = self.conf_f/self.total_conf
-            self.confidence_l = self.conf_l/self.total_conf
-            self.confidence_r = self.conf_r/self.total_conf
-            self.bpm_avg = self.bpm_f*self.confidence_f+self.bpm_l * self.confidence_l+self.bpm_r*self.confidence_r
+            self.conf_f = self.conf_f/self.total_conf
+            self.conf_l = self.conf_l/self.total_conf
+            self.conf_r = self.conf_r/self.total_conf
+            self.bpm_avg = self.bpm_f*self.conf_f+self.bpm_l * self.conf_l+self.bpm_r*self.conf_r
+            
+            current_time_hr = time.time()
+            elapsed_time_hr = current_time_hr - self.start_time_hr
+            if elapsed_time_hr >= 2:
+                async_to_sync(self.channel_layer.group_send)(
+                    "video",
+                    {
+                        "type": "video.hr",
+                        "hr": self.bpm_avg,
+                    }
+                )
+                print("bpm ", self.bpm_avg)
+                self.start_time_hr = current_time_hr
             
             Label_Text = "Fs: \t\t"+str(self.processor.series_class.fps)+"\nFore BPM: \t"+str(
-                self.bpm_f)+"\nFore Confidence: "+str(self.confidence_f*100)+"%\nLeft BPM: \t"+str(
-                self.bpm_l)+"\nLeft Confidence: "+str(self.confidence_l*100)+"%\nRight BPM:\t"+str(
-                self.bpm_r)+"\nRight Confidence:"+str(self.confidence_r*100)+"%\n\nBPM Overall: \t"+str(self.bpm_avg)
+                self.bpm_f)+"\nFore Confidence: "+str(self.conf_f*100)+"%\nLeft BPM: \t"+str(
+                self.bpm_l)+"\nLeft Confidence: "+str(self.conf_l*100)+"%\nRight BPM:\t"+str(
+                self.bpm_r)+"\nRight Confidence:"+str(self.conf_r*100)+"%\n\nBPM Overall: \t"+str(self.bpm_avg)
             
             self.label.setText(Label_Text)
             print(Label_Text)

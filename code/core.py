@@ -1,15 +1,24 @@
 import threading
 import time
 import copy
+import os
+import base64
+import json
 from queue import Queue
 
 import cv2 as cv
 import dlib
 from obspy.signal.detrend import polynomial
 import numpy as np
-
+from collections import deque
 import matplotlib.pyplot as plt
+
 from utils import Hist2Feature, RGB_hist
+
+import paho.mqtt.client as mqtt
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
 
 import seaborn as sns
 sns.set()
@@ -19,9 +28,21 @@ class face2feature:
     def __init__(self) -> None:
         self.detector = dlib.get_frontal_face_detector()
         self.predictor = dlib.shape_predictor('./code/model/shape_predictor_81_face_landmarks.dat')
-        self.cam = cv.VideoCapture(0)
 
+        self.mqtt_client = mqtt.Client(transport="websockets")
+        self.mqtt_client.username_pw_set("mqtt", "1234")
+        self.mqtt_client.connect("127.0.0.1", 9001)
+        self.mqtt_client.subscribe("/data/tx")
+        self.mqtt_client.on_message = self.on_message
+        self.mqtt_client.loop_start()
+        self.last_frame_time = None
+        self.frame_count = 0 
+        self.lock = threading.Lock()
+        self.last_ten_frames_time = deque(maxlen=100)
+
+        self.cam = cv.VideoCapture(0)
         self.fps = 24
+
         self.QUEUE_MAX = 256
         self.QUEUE_WINDOWS = 64
         self.Queue_rawframe = Queue(maxsize=3)
@@ -54,24 +75,11 @@ class face2feature:
     # Process: capture frame from camera in specific fps of the camera
     def capture_process(self):
         while self.working:
-            self.ret, frame = self.cam.read()
+            frame = self.Queue_rawframe.get()
             self.frame_display = copy.copy(frame)
+
             if self.Queue_Time.full():
                 self.Queue_Time.get_nowait()
-                self.fps = 1 / np.mean(np.diff(np.array(list(self.Queue_Time.queue))))
-
-            if not self.ret:
-                self.working = False
-                break
-            if self.Queue_rawframe.full():
-                self.Queue_rawframe.get_nowait()
-            else:
-                self.Queue_Time.put_nowait(time.time())
-
-            try:
-                self.Queue_rawframe.put_nowait(frame)
-            except Exception as e:
-                pass
 
     # Process: calculate roi from raw frame
     def roi_process(self):
@@ -187,6 +195,25 @@ class face2feature:
             self.face_mask = frame
             self.flag_face = False
             return None, None, None
+        
+    def on_message(self, client, userdata, msg):
+        frame_data_bytes = base64.b64decode(msg.payload)
+        nparr = np.frombuffer(frame_data_bytes, np.uint8)
+        frame = cv.imdecode(nparr, cv.IMREAD_COLOR)
+        self.status = frame is not None
+
+        with self.lock:
+            self.frame_count += 1  # increment the frame count
+            self.last_ten_frames_time.append(time.time())  # append the current timestamp to the deque
+            if len(self.last_ten_frames_time) > 100:  # if more than 10 timestamps are stored
+                self.last_ten_frames_time.popleft()  # remove the oldest timestamp
+            if len(self.last_ten_frames_time) == 100:  # if exactly 10 timestamps are stored
+                time_diff = self.last_ten_frames_time[-1] - self.last_ten_frames_time[0]  # time difference between the newest and oldest frame
+                self.fps = len(self.last_ten_frames_time) / time_diff  # calculate fps
+
+        if self.Queue_rawframe.full():
+            self.Queue_rawframe.get_nowait()
+        self.Queue_rawframe.put_nowait(frame)
 
     def __del__(self):
         self.working = False
