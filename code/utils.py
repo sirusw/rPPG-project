@@ -1,53 +1,82 @@
-import base64
-import os
-import matplotlib.pyplot as plt
-import numpy as np
-from scipy import signal
-import cv2 as cv
+from PyQt5 import QtCore, QtGui, QtWidgets
 
-import options  
-kwargs = options.get_options()
 
-def butterworth_filter(stream, low, high, sample_rate, order=5):
-    nyquist_rate = sample_rate * 0.5
-    low /= nyquist_rate
-    high /= nyquist_rate
-    b, a = signal.butter(order, [low, high], btype='band')
-    return signal.lfilter(b, a, stream)
+class ui(object):
+    def setupUi(self, MainWindow):
+        MainWindow.setObjectName("MainWindow")
+        MainWindow.resize(1308, 850)
+        self.centralwidget = QtWidgets.QWidget(MainWindow)
+        self.centralwidget.setObjectName("centralwidget")
+        self.face = QtWidgets.QLabel(self.centralwidget)
+        self.face.setGeometry(QtCore.QRect(620, 10, 681, 391))
+        self.face.setText("")
+        self.face.setObjectName("face")
+        self.verticalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
+        self.verticalLayoutWidget.setGeometry(QtCore.QRect(10, 410, 531, 431))
+        self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
+        self.Layout_BVP = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
+        self.Layout_BVP.setContentsMargins(0, 0, 0, 0)
+        self.Layout_BVP.setObjectName("Layout_BVP")
+        self.verticalLayoutWidget_2 = QtWidgets.QWidget(self.centralwidget)
+        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(10, 10, 601, 391))
+        self.verticalLayoutWidget_2.setObjectName("verticalLayoutWidget_2")
+        self.Layout_button = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_2)
+        self.Layout_button.setContentsMargins(0, 0, 0, 0)
+        self.Layout_button.setObjectName("Layout_button")
+        self.horizontalLayout = QtWidgets.QHBoxLayout()
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.comboBox = QtWidgets.QComboBox(self.verticalLayoutWidget_2)
+        self.comboBox.setMinimumSize(QtCore.QSize(0, 28))
+        self.comboBox.setMaximumSize(QtCore.QSize(16777215, 28))
+        self.comboBox.setObjectName("comboBox")
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
+        self.horizontalLayout.addWidget(self.comboBox)
+        self.Layout_button.addLayout(self.horizontalLayout)
+        self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.Button_RawTrue = QtWidgets.QPushButton(self.verticalLayoutWidget_2)
+        self.Button_RawTrue.setObjectName("Button_RawTrue")
+        self.horizontalLayout_2.addWidget(self.Button_RawTrue)
+        self.Button_RawFalse = QtWidgets.QPushButton(self.verticalLayoutWidget_2)
+        self.Button_RawFalse.setObjectName("Button_RawFalse")
+        self.horizontalLayout_2.addWidget(self.Button_RawFalse)
+        self.Layout_button.addLayout(self.horizontalLayout_2)
+        self.label = QtWidgets.QLabel(self.verticalLayoutWidget_2)
+        self.label.setMinimumSize(QtCore.QSize(0, 300))
+        font = QtGui.QFont()
+        font.setFamily("Consolas")
+        font.setPointSize(18)
+        self.label.setFont(font)
+        self.label.setText("")
+        self.label.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
+        self.label.setObjectName("label")
+        self.Layout_button.addWidget(self.label)
+        self.verticalLayoutWidget_3 = QtWidgets.QWidget(self.centralwidget)
+        self.verticalLayoutWidget_3.setGeometry(QtCore.QRect(890, 410, 411, 431))
+        self.verticalLayoutWidget_3.setObjectName("verticalLayoutWidget_3")
+        self.Layout_Signal = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_3)
+        self.Layout_Signal.setContentsMargins(0, 0, 0, 0)
+        self.Layout_Signal.setObjectName("Layout_Signal")
+        self.verticalLayoutWidget_4 = QtWidgets.QWidget(self.centralwidget)
+        self.verticalLayoutWidget_4.setGeometry(QtCore.QRect(550, 410, 331, 431))
+        self.verticalLayoutWidget_4.setObjectName("verticalLayoutWidget_4")
+        self.Layout_Spec = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_4)
+        self.Layout_Spec.setContentsMargins(0, 0, 0, 0)
+        self.Layout_Spec.setObjectName("Layout_Spec")
+        MainWindow.setCentralWidget(self.centralwidget)
 
-def RGB_hist(roi):
-    b_hist = cv.calcHist([roi], [0], None, [256], [0, 256])
-    g_hist = cv.calcHist([roi], [1], None, [256], [0, 256])
-    r_hist = cv.calcHist([roi], [2], None, [256], [0, 256])
+        self.retranslateUi(MainWindow)
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
-    b_hist = np.reshape(b_hist, (256))
-    g_hist = np.reshape(g_hist, (256))
-    r_hist = np.reshape(r_hist, (256))
-
-    b_hist[0] = 0
-    g_hist[0] = 0
-    r_hist[0] = 0
-
-    r_hist = r_hist/np.sum(r_hist)
-    g_hist = g_hist/np.sum(g_hist)
-    b_hist = b_hist/np.sum(b_hist)
-
-    print([r_hist, g_hist, b_hist])
-
-    return [r_hist, g_hist, b_hist]
-
-def Hist2Feature(hist):
-    hist_r = hist[0]
-    hist_g = hist[1]
-    hist_b = hist[2]
-
-    hist_r /= np.sum(hist_r)
-    hist_g /= np.sum(hist_g)
-    hist_b /= np.sum(hist_b)
-
-    dens = np.arange(0, 256, 1)
-    mean_r = dens.dot(hist_r)
-    mean_g = dens.dot(hist_g)
-    mean_b = dens.dot(hist_b)
-
-    return [mean_r, mean_g, mean_b]
+    def retranslateUi(self, MainWindow):
+        _translate = QtCore.QCoreApplication.translate
+        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        self.comboBox.setItemText(0, _translate("MainWindow", "GREEN"))
+        self.comboBox.setItemText(1, _translate("MainWindow", "GREEN-RED"))
+        self.comboBox.setItemText(2, _translate("MainWindow", "CHROM"))
+        self.comboBox.setItemText(3, _translate("MainWindow", "PBV"))
+        self.Button_RawTrue.setText(_translate("MainWindow", "Raw Signal"))
+        self.Button_RawFalse.setText(_translate("MainWindow", "Filtered Signal"))
