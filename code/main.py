@@ -14,16 +14,16 @@ from core import feature2rppg
 from utils import butterworth_filter
 import matplotlib.pyplot as plt
 
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
 import os
-import django
 import sys
 
-MIN_HZ = 0.8
-MAX_HZ = 2.5
+from options import get_options
+kwargs = get_options()
 
-def butterworth_filter(stream, low, high, sample_rate, order=11):
+MIN_HZ = kwargs.hr_freq_range[0]
+MAX_HZ = kwargs.hr_freq_range[1]
+
+def butterworth_filter(stream, low, high, sample_rate, order=5):
     nyquist_rate = sample_rate * 0.5
     low /= nyquist_rate
     high /= nyquist_rate
@@ -36,18 +36,9 @@ class Main():
         self.processor.streaming()
         self.mode = self.processor.Chrom
 
-        self.bpm_f, self.bpm_l, self.bpm_r, self.bpm_avg = 60, 60, 60, 60
+        self.bpm_f, self.bpm_l, self.bpm_r, self.bpm_avg = kwargs.init_hr, kwargs.init_hr, kwargs.init_hr, kwargs.init_hr
         self.conf_f, self.conf_l, self.conf_r = 1, 1, 1
         self.start_time = time.time()
-
-        current_directory = os.path.dirname(os.path.abspath(__file__))
-        parent_directory = os.path.dirname(current_directory)
-        django_project_directory = os.path.join(parent_directory, 'server')
-        print(django_project_directory)
-        sys.path.insert(0, django_project_directory)
-        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'server.settings')
-        django.setup()
-        self.channel_layer = get_channel_layer()
 
     def DisplayBpm(self):
         signal_f = np.array(self.processor.feature.signal_f)
@@ -75,9 +66,9 @@ class Main():
             self.spec_l = np.abs(np.fft.fft(self.bvp_l))
             self.spec_r = np.abs(np.fft.fft(self.bvp_r))
 
-            self.bpm_f = self.processor.transfer2bpm(self.bpm_f, self.spec_f, self.conf_f)
-            self.bpm_l = self.processor.transfer2bpm(self.bpm_l, self.spec_l, self.conf_l)
-            self.bpm_r = self.processor.transfer2bpm(self.bpm_r, self.spec_r, self.conf_r)
+            self.bpm_f = self.processor.transfer2bpm(kwargs.beta, self.bpm_f, self.spec_f, self.conf_f)
+            self.bpm_l = self.processor.transfer2bpm(kwargs.beta, self.bpm_l, self.spec_l, self.conf_l)
+            self.bpm_r = self.processor.transfer2bpm(kwargs.beta, self.bpm_r, self.spec_r, self.conf_r)
 
         self.total_conf = self.conf_f + self.conf_l + self.conf_r
         self.weight_f = self.conf_f / self.total_conf
@@ -85,20 +76,6 @@ class Main():
         self.weight_r = self.conf_r / self.total_conf
 
         self.bpm_avg = self.bpm_f * self.weight_f + self.bpm_l * self.weight_l + self.bpm_r * self.weight_r
-
-        current_time = time.time()
-        elapsed_time = current_time - self.start_time
-        if elapsed_time >= 2:
-            async_to_sync(self.channel_layer.group_send)(
-                "video",
-                {
-                    "type": "video.hr",
-                    "hr": self.bpm_avg,
-                }
-            )
-            print("bpm ", self.bpm_avg)
-            self.start_time = current_time
-        
 
 
 if __name__ == "__main__":

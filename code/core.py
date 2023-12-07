@@ -13,10 +13,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from obspy.signal.detrend import polynomial, spline
 from scipy import signal
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
+
 import os
-import paho.mqtt.client as mqtt
 import json
 import base64
 import time
@@ -48,27 +46,6 @@ class feature2rppg:
         data_g = self.polynomialize(data[:, 1])
         data_b = self.polynomialize(data[:, 2])
         return np.array([data_r, data_g, data_b]).T
-    
-    def Pbv(self, signal):
-        signal_mean = np.mean(signal, axis=1)
-        signal_norm_r = signal[:, 0] / signal_mean[0]
-        signal_norm_g = signal[:, 1] / signal_mean[1]
-        signal_norm_b = signal[:, 2] / signal_mean[2]
-
-        pbv_numerator = np.array(
-            [np.std(signal_norm_r), np.std(signal_norm_g), np.std(signal_norm_b)])
-        pbv_denumerator = np.sqrt(
-            np.var(signal_norm_r) + np.var(signal_norm_g) + np.var(signal_norm_b))
-        pbv = pbv_numerator / pbv_denumerator
-
-        C = np.array([signal_norm_r, signal_norm_g, signal_norm_b])
-        Ct = C.T
-        Q = np.matmul(Ct, C)
-        W = np.linalg.solve(Q, pbv)
-        A = np.matmul(C, Ct)
-        B = np.matmul(pbv.T, W)
-
-        return A/B
 
     def Chrom(self, signal):
         X = signal.copy()
@@ -79,14 +56,9 @@ class feature2rppg:
 
         return X_comp - alpha * Y_comp
     
-    def Green_red(self, signal):
-        return signal[:, 1] - signal[:, 0]
-    
-    def Green(self, signal):
-        return signal[:, 1]
-    
-    def transfer2bpm(self, raw_bpm, spec, fps):
-        return 0.95 * raw_bpm + 0.05 * np.argmax(spec[:int(len(spec)/2)]) * fps * 60
+    def transfer2bpm(self, beta, raw_bpm, spec, fps):
+        assert 0 <= beta <= 1
+        return beta * raw_bpm + (1 - beta) * np.argmax(spec[:int(len(spec)/2)]) * fps * 60
     
     def __del__(self):
         self.working = False
@@ -95,33 +67,23 @@ class feature2rppg:
 class face2feature:
     def __init__(self) -> None:
         self.detector = dlib.get_frontal_face_detector()
-        current_dir = os.path.dirname(__file__)
-        landmarker_path = os.path.join(current_dir, "model", "shape_predictor_81_face_landmarks.dat")
-        self.predictor = dlib.shape_predictor(landmarker_path)
-
-        self.mqtt_client = mqtt.Client(transport="websockets")
-        self.mqtt_client.username_pw_set("mqtt", "1234")
-        self.mqtt_client.connect("127.0.0.1", 9001)
-        self.mqtt_client.subscribe("/data/tx")
-        self.mqtt_client.on_message = self.on_message
-        self.mqtt_client.loop_start()
-        self.last_frame_time = None
-        self.frame_count = 0 
-        self.lock = threading.Lock()
-        self.last_ten_frames_time = deque(maxlen=100)
-        # self.stream = cv.VideoCapture(0)
-        # self.stream = cv.VideoCapture("./video.avi")
-        # print(f"Total frame: {self.stream.get(cv.CAP_PROP_FRAME_COUNT)}")
+        self.predictor = dlib.shape_predictor(r"./code/model/shape_predictor_81_face_landmarks.dat")
         
+        self.stream = cv.VideoCapture(0)
+        while(self.stream.isOpened()):
+            status, frame = self.stream.read()
+            if status:
+                frame = frame.astype(np.uint8)
+                cv.imshow('Frame',frame)
+            if cv.waitKey(1) & 0xFF == ord('q'):
+                break
         # if not self.stream.isOpened():
         #     self.stream.release()
         #     raise IOError("No input stream")
-
-        # self.fps = self.stream.get(cv.CAP_PROP_FPS)
-        self.fps = 15
-        self.QUEUE_MAX = 64
-        self.QUEUE_WINDOWS = 32
-        self.Queue_rawframe = Queue(maxsize=3)
+        self.fps = 18
+        self.QUEUE_MAX = kwargs.quque_size
+        self.QUEUE_WINDOWS = kwargs.window_size
+        self.Queue_rawframe = Queue(maxsize=kwargs.quque_rawframe_size)
 
         self.Queue_signal_l = Queue(maxsize=self.QUEUE_MAX)
         self.Queue_signal_r = Queue(maxsize=self.QUEUE_MAX)
@@ -206,14 +168,12 @@ class face2feature:
                 if self.Queue_signal_l.full():
                     self.signal_l = copy.copy(list(self.Queue_signal_l.queue))
                     self.Queue_signal_l.get_nowait()
-                    self.flag_queue = True
                 else:
                     self.flag_queue = False
 
                 if self.Queue_signal_r.full():
                     self.signal_r = copy.copy(list(self.Queue_signal_r.queue))
                     self.Queue_signal_r.get_nowait()
-                    self.flag_queue = True
                 else:
                     self.flag_queue = False
                 
