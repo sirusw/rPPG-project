@@ -67,23 +67,16 @@ class feature2rppg:
 class face2feature:
     def __init__(self) -> None:
         self.detector = dlib.get_frontal_face_detector()
-        self.predictor = dlib.shape_predictor(r"./code/model/shape_predictor_81_face_landmarks.dat")
+        self.predictor = dlib.shape_predictor(kwargs.model_path)
         
         self.stream = cv.VideoCapture(0)
-        while(self.stream.isOpened()):
-            status, frame = self.stream.read()
-            if status:
-                frame = frame.astype(np.uint8)
-                cv.imshow('Frame',frame)
-            if cv.waitKey(1) & 0xFF == ord('q'):
-                break
         # if not self.stream.isOpened():
         #     self.stream.release()
         #     raise IOError("No input stream")
         self.fps = 18
-        self.QUEUE_MAX = kwargs.quque_size
+        self.QUEUE_MAX = kwargs.queue_size
         self.QUEUE_WINDOWS = kwargs.window_size
-        self.Queue_rawframe = Queue(maxsize=kwargs.quque_rawframe_size)
+        self.Queue_rawframe = Queue(maxsize=kwargs.queue_rawframe_size)
 
         self.Queue_signal_l = Queue(maxsize=self.QUEUE_MAX)
         self.Queue_signal_r = Queue(maxsize=self.QUEUE_MAX)
@@ -163,8 +156,7 @@ class face2feature:
                 self.hist_l = RGB_hist(roi_l)
                 self.hist_r = RGB_hist(roi_r)
                 self.hist_f = RGB_hist(roi_f)
-                # print(self.Queue_signal_l.qsize(), self.Queue_signal_r.qsize(), self.Queue_signal_f.qsize())
-                # print(self.flag_queue)
+
                 if self.Queue_signal_l.full():
                     self.signal_l = copy.copy(list(self.Queue_signal_l.queue))
                     self.Queue_signal_l.get_nowait()

@@ -82,5 +82,13 @@ if __name__ == "__main__":
     main = Main()
     while True:
         bpm = main.DisplayBpm()
-        # print(main.processor.feature.flag_queue)
+        """
+        while(main.processor.feature.stream.isOpened()):
+            status, _ = main.processor.feature.stream.read()
+            cv.imshow('Frame', main.processor.feature.face_mask)
+            if cv.waitKey(1) & 0xFF == ord('q'):
+                break
+        """
+
+        # print(type(main.processor.feature.face_mask))
         print(main.bpm_avg)

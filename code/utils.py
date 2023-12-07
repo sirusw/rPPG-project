@@ -32,6 +32,8 @@ def RGB_hist(roi):
     g_hist = g_hist/np.sum(g_hist)
     b_hist = b_hist/np.sum(b_hist)
 
+    print([r_hist, g_hist, b_hist])
+
     return [r_hist, g_hist, b_hist]
 
 def Hist2Feature(hist):
