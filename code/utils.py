@@ -8,7 +8,7 @@ import cv2 as cv
 import options  
 kwargs = options.get_options()
 
-def butterworth_filter(stream, low, high, sample_rate, order=11):
+def butterworth_filter(stream, low, high, sample_rate, order=5):
     nyquist_rate = sample_rate * 0.5
     low /= nyquist_rate
     high /= nyquist_rate
@@ -31,6 +31,8 @@ def RGB_hist(roi):
     r_hist = r_hist/np.sum(r_hist)
     g_hist = g_hist/np.sum(g_hist)
     b_hist = b_hist/np.sum(b_hist)
+
+    print([r_hist, g_hist, b_hist])
 
     return [r_hist, g_hist, b_hist]
 

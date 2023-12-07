@@ -3,12 +3,13 @@ import argparse
 
 def get_options():
     parser = argparse.ArgumentParser()
-    
-    parser.add_argument('--path', type=str, default='./data/')
-    parser.add_argument('--mode', type=str, default='train')
-    parser.add_argument('--save', action='store_true')
-    parser.add_argument('--save_path', type=str, default='./save/') 
-                        
+    parser.add_argument('--model_path', type=str, default="./code/model/shape_predictor_81_face_landmarks.dat")
+    parser.add_argument('--init_hr', type=int, default=60)
+    parser.add_argument('--hr_freq_range', type=list, default=[0.8, 2.5])
+    parser.add_argument('--beta', type=float, default=0.95)
+    parser.add_argument('--queue_size', type=int, default=128)
+    parser.add_argument('--window_size', type=int, default=32)
+    parser.add_argument('--queue_rawframe_size', type=int, default=3)
     kwargs = parser.parse_args()
     return kwargs
 

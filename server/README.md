@@ -23,6 +23,13 @@ sudo service redis-server status
 redis-cli -h 127.0.0.1 -p 6379
 ```
 
+
+In case of WSL virtualization issue: Powershell admin
+```
+bcdedit /set hypervisorlaunchtype auto
+```
+
+
 3. Start the Daphne server.
 
 ```bash
