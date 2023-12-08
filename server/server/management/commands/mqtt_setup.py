@@ -34,28 +34,6 @@ class MQTTClient:
         self.lock = Lock()
         self.executor = ThreadPoolExecutor(max_workers=5)
 
-    def rppg_fake_data(self, frame):
-        def run_fake_data():
-            with self.lock:
-                self.frame_buffer.append(frame)
-                if len(self.frame_buffer) >= self.frame_buffer_size:
-                    self.frame_buffer.pop(0)
-
-                    channel_layer = get_channel_layer()
-                    time.sleep(3)
-                    # Generate a random heart rate in the normal range (60-100 beats per minute)
-                    heart_rate = random.randint(60, 100)
-                    # Send heart rate results to frontend
-                    async_to_sync(channel_layer.group_send)(
-                        "video",
-                        {
-                            "type": "video.hr",
-                            "hr": heart_rate,
-                        }
-                    )
-        # Thread(target=run_fake_data).start()
-        # self.executor.submit(run_fake_data)
-
     def on_connect(self, client, userdata, flags, rc):
         print("Connected to MQTT broker with result code "+str(rc))
         client.subscribe("/data/tx")
@@ -72,7 +50,6 @@ class MQTTClient:
             return
         
         frame_base64 = msg.payload.decode('utf-8')
-        self.rppg_fake_data(frame_base64)
 
         channel_layer = get_channel_layer()
 

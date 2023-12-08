@@ -29,17 +29,6 @@ class face2feature:
         self.detector = dlib.get_frontal_face_detector()
         self.predictor = dlib.shape_predictor('./code/model/shape_predictor_81_face_landmarks.dat')
 
-        self.mqtt_client = mqtt.Client(transport="websockets")
-        self.mqtt_client.username_pw_set("mqtt", "1234")
-        self.mqtt_client.connect("127.0.0.1", 9001)
-        self.mqtt_client.subscribe("/data/tx")
-        self.mqtt_client.on_message = self.on_message
-        self.mqtt_client.loop_start()
-        self.last_frame_time = None
-        self.frame_count = 0 
-        self.lock = threading.Lock()
-        self.last_ten_frames_time = deque(maxlen=100)
-
         self.cam = cv.VideoCapture(0)
         self.fps = 24
 
@@ -62,6 +51,17 @@ class face2feature:
         self.Sig_l = None
         self.Sig_r = None
         self.Sig_f = None
+
+        self.mqtt_client = mqtt.Client(transport="websockets")
+        self.mqtt_client.username_pw_set("mqtt", "1234")
+        self.mqtt_client.connect("127.0.0.1", 9001)
+        self.mqtt_client.subscribe("/data/tx")
+        self.mqtt_client.on_message = self.on_message
+        self.mqtt_client.loop_start()
+        self.last_frame_time = None
+        self.frame_count = 0 
+        self.lock = threading.Lock()
+        self.last_ten_frames_time = deque(maxlen=100)
 
     # Initialize process and start
 

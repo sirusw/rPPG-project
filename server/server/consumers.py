@@ -55,6 +55,23 @@ class VideoConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             "type": "video.hr",
             'hr': event['hr'], 
+            "bpm_f": event['bpm_f'],
+            "bpm_l": event['bpm_l'],
+            "bpm_r": event['bpm_r'],
+            "conf_f": event['conf_f'],
+            "conf_l": event['conf_l'],
+            "conf_r": event['conf_r'],
+
+        }))
+        return
+    
+    async def video_sp(self, event):
+        await self.send(text_data=json.dumps({
+            "type": "video.sp",
+            'sp_f': event['sp_f'],
+            "sp_l": event['sp_l'],
+            "sp_r": event['sp_r'],
+
         }))
         return
     

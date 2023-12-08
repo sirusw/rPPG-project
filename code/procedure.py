@@ -20,8 +20,8 @@ from core import feature2rppg
 from utils import butterworth_filter
 
 MIN_HZ = 0.85  # 51bpm
-MAX_HZ = 2.5 # 150bpm
-BETA = 0.95 # smoothing factor
+MAX_HZ = 2.5  # 150bpm
+BETA = 0.95  # smoothing factor
 
 
 class ui(object):
@@ -74,7 +74,9 @@ class ui(object):
         font.setPointSize(18)
         self.label.setFont(font)
         self.label.setText("")
-        self.label.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
+        self.label.setAlignment(
+            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop
+        )
         self.label.setObjectName("label")
         self.Layout_button.addWidget(self.label)
         self.verticalLayoutWidget_3 = QtWidgets.QWidget(self.centralwidget)
@@ -196,8 +198,8 @@ class Procedure(QMainWindow, ui):
         self.bpm_r = 60
 
         self.bpm_avg = 60
-        self.ModeDict = {'CHROM': self.processor.CHROM}
-        self.Mode = self.ModeDict['CHROM']
+        self.ModeDict = {"CHROM": self.processor.CHROM}
+        self.Mode = self.ModeDict["CHROM"]
         self.Data_ShowRaw = True
         self.slot_init()
 
@@ -206,10 +208,10 @@ class Procedure(QMainWindow, ui):
 
         current_directory = os.path.dirname(os.path.abspath(__file__))
         parent_directory = os.path.dirname(current_directory)
-        django_project_directory = os.path.join(parent_directory, 'server')
+        django_project_directory = os.path.join(parent_directory, "server")
         print(django_project_directory)
         sys.path.insert(0, django_project_directory)
-        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'server.settings')
+        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "server.settings")
         django.setup()
         self.channel_layer = get_channel_layer()
 
@@ -232,14 +234,14 @@ class Procedure(QMainWindow, ui):
 
     def DisplayImage(self):
         Mask = self.processor.series_class.face_mask
-        Mask = cv.ellipse(Mask, [640, 360], [80, 120], 0, 0, 360,
-                          [0, 255, 0], 1, cv.LINE_AA)
+        Mask = cv.ellipse(
+            Mask, [640, 360], [80, 120], 0, 0, 360, [0, 255, 0], 1, cv.LINE_AA
+        )
         Mask = cv.circle(Mask, [640, 360], 2, [255, 0, 0], 2, cv.LINE_AA)
 
         if Mask is not None:
             img = cv.cvtColor(Mask, cv.COLOR_BGR2RGB)
-            qimg = QImage(
-                img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
+            qimg = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
 
             self.face.setPixmap(QPixmap.fromImage(qimg))
 
@@ -271,7 +273,18 @@ class Procedure(QMainWindow, ui):
             self.Hist_r_r.clear()
             self.Hist_r_g.clear()
             self.Hist_r_b.clear()
-            
+
+        Hist_f_r_data_x, Hist_f_r_data_y = self.Hist_f_r.getData()
+        Hist_f_g_data_x, Hist_f_g_data_y = self.Hist_f_g.getData()
+        Hist_f_b_data_x, Hist_f_b_data_y = self.Hist_f_b.getData()
+
+        Hist_l_r_data_x, Hist_l_r_data_y = self.Hist_l_r.getData()
+        Hist_l_g_data_x, Hist_l_g_data_y = self.Hist_l_g.getData()
+        Hist_l_b_data_x, Hist_l_b_data_y = self.Hist_l_b.getData()
+
+        Hist_r_r_data_x, Hist_r_r_data_y = self.Hist_r_r.getData()
+        Hist_r_g_data_x, Hist_r_g_data_y = self.Hist_r_g.getData()
+        Hist_r_b_data_x, Hist_r_b_data_y = self.Hist_r_b.getData()
         current_time_sp = time.time()
         elapsed_time_sp = current_time_sp - self.start_time_sp
         if elapsed_time_sp >= 2:
@@ -279,10 +292,22 @@ class Procedure(QMainWindow, ui):
                 "video",
                 {
                     "type": "video.sp",
-                    "sp_f": self.Hist_f,
-                    "sp_l": self.Hist_l,
-                    "sp_r": self.Hist_r,
-                }
+                    "sp_f": [
+                        [Hist_f_r_data_x.tolist(), Hist_f_r_data_y.tolist()],
+                        [Hist_f_g_data_x.tolist(), Hist_f_g_data_y.tolist()],
+                        [Hist_f_b_data_x.tolist(), Hist_f_b_data_y.tolist()],
+                    ],
+                    "sp_l": [
+                        [Hist_l_r_data_x.tolist(), Hist_l_r_data_y.tolist()],
+                        [Hist_l_g_data_x.tolist(), Hist_l_g_data_y.tolist()],
+                        [Hist_l_b_data_x.tolist(), Hist_l_b_data_y.tolist()],
+                    ],
+                    "sp_r": [
+                        [Hist_r_r_data_x.tolist(), Hist_r_r_data_y.tolist()],
+                        [Hist_r_g_data_x.tolist(), Hist_r_g_data_y.tolist()],
+                        [Hist_r_b_data_x.tolist(), Hist_r_b_data_y.tolist()],
+                    ],
+                },
             )
             self.start_time_sp = current_time_sp
 
@@ -294,61 +319,107 @@ class Procedure(QMainWindow, ui):
             if Sig_f.size != 1:
                 # self.bvp_f_raw = self.processor.PBV(Sig_f)
                 self.bvp_f_raw = self.Mode(Sig_f)
-                self.conf_f = 1 / \
-                    (max(self.bvp_f_raw)-min(self.bvp_f_raw))
-                self.bvp_f = butterworth_filter(self.processor.Signal_Preprocessing_single(self.bvp_f_raw), MIN_HZ, MAX_HZ, self.processor.series_class.fps, order=5)
+                self.conf_f = 1 / (max(self.bvp_f_raw) - min(self.bvp_f_raw))
+                self.bvp_f = butterworth_filter(
+                    self.processor.Signal_Preprocessing_single(self.bvp_f_raw),
+                    MIN_HZ,
+                    MAX_HZ,
+                    self.processor.series_class.fps,
+                    order=5,
+                )
                 self.spc_f = np.abs(np.fft.fft(self.bvp_f))
-                self.bpm_f = self.processor.transfer2bmp(BETA, self.bpm_f, self.spc_f, self.processor.series_class.fps)
+                self.bpm_f = self.processor.transfer2bmp(
+                    BETA, self.bpm_f, self.spc_f, self.processor.series_class.fps
+                )
                 if self.Data_ShowRaw:
                     self.Sig_f.setData(self.bvp_f_raw, pen=(0, 255, 255))
                 else:
                     self.Sig_f.setData(self.bvp_f, pen=(0, 255, 255))
-                self.Spec_f.setData(np.linspace(0,self.processor.series_class.fps/2*60,int((len(self.spc_f)+1)/2)),
-                    self.spc_f[:int((len(self.spc_f)+1)/2)], pen=(0, 255, 255))
+                self.Spec_f.setData(
+                    np.linspace(
+                        0,
+                        self.processor.series_class.fps / 2 * 60,
+                        int((len(self.spc_f) + 1) / 2),
+                    ),
+                    self.spc_f[: int((len(self.spc_f) + 1) / 2)],
+                    pen=(0, 255, 255),
+                )
             else:
                 self.Sig_f.setData([0], [0])
                 self.Spec_f.setData([0], [0])
             if Sig_l.size != 1:
                 # self.bvp_l_raw = self.processor.GREEN(Sig_l)
                 self.bvp_l_raw = self.Mode(Sig_l)
-                self.conf_l = 1 / \
-                    (max(self.bvp_l_raw)-min(self.bvp_l_raw))
-                self.bvp_l = butterworth_filter(self.processor.Signal_Preprocessing_single(self.bvp_l_raw), MIN_HZ, MAX_HZ, self.processor.series_class.fps, order=5)
+                self.conf_l = 1 / (max(self.bvp_l_raw) - min(self.bvp_l_raw))
+                self.bvp_l = butterworth_filter(
+                    self.processor.Signal_Preprocessing_single(self.bvp_l_raw),
+                    MIN_HZ,
+                    MAX_HZ,
+                    self.processor.series_class.fps,
+                    order=5,
+                )
                 self.spc_l = np.abs(np.fft.fft(self.bvp_l))
-                self.bpm_l = self.processor.transfer2bmp(BETA, self.bpm_l, self.spc_l, self.processor.series_class.fps)
+                self.bpm_l = self.processor.transfer2bmp(
+                    BETA, self.bpm_l, self.spc_l, self.processor.series_class.fps
+                )
                 if self.Data_ShowRaw:
                     self.Sig_l.setData(self.bvp_l_raw, pen=(255, 0, 255))
                 else:
                     self.Sig_l.setData(self.bvp_l, pen=(255, 0, 255))
-                self.Spec_l.setData(np.linspace(0,self.processor.series_class.fps/2*60,int((len(self.spc_l)+1)/2)),
-                    self.spc_l[:int((len(self.spc_l)+1)/2)], pen=(255, 0, 255))
+                self.Spec_l.setData(
+                    np.linspace(
+                        0,
+                        self.processor.series_class.fps / 2 * 60,
+                        int((len(self.spc_l) + 1) / 2),
+                    ),
+                    self.spc_l[: int((len(self.spc_l) + 1) / 2)],
+                    pen=(255, 0, 255),
+                )
             else:
                 self.Sig_l.setData([0], [0])
                 self.Spec_l.clear([0], [0])
             if Sig_r.size != 1:
                 # self.bvp_r_raw = self.processor.CHROM(Sig_r)
                 self.bvp_r_raw = self.Mode(Sig_r)
-                self.conf_r = 1 / \
-                    (max(self.bvp_r_raw)-min(self.bvp_r_raw))
-                self.bvp_r = butterworth_filter(self.processor.Signal_Preprocessing_single(self.bvp_r_raw), MIN_HZ, MAX_HZ, self.processor.series_class.fps, order=5)
+                self.conf_r = 1 / (max(self.bvp_r_raw) - min(self.bvp_r_raw))
+                self.bvp_r = butterworth_filter(
+                    self.processor.Signal_Preprocessing_single(self.bvp_r_raw),
+                    MIN_HZ,
+                    MAX_HZ,
+                    self.processor.series_class.fps,
+                    order=5,
+                )
                 self.spc_r = np.abs(np.fft.fft(self.bvp_r))
-                self.bpm_r = self.processor.transfer2bmp(BETA, self.bpm_r, self.spc_r, self.processor.series_class.fps)
+                self.bpm_r = self.processor.transfer2bmp(
+                    BETA, self.bpm_r, self.spc_r, self.processor.series_class.fps
+                )
                 if self.Data_ShowRaw:
                     self.Sig_r.setData(self.bvp_r_raw, pen=(255, 255, 0))
                 else:
                     self.Sig_r.setData(self.bvp_r, pen=(255, 255, 0))
-                self.Spec_r.setData(np.linspace(0,self.processor.series_class.fps/2*60,int((len(self.spc_r)+1)/2)),
-                    self.spc_r[:int((len(self.spc_r)+1)/2)], pen=(255, 255, 0))
+                self.Spec_r.setData(
+                    np.linspace(
+                        0,
+                        self.processor.series_class.fps / 2 * 60,
+                        int((len(self.spc_r) + 1) / 2),
+                    ),
+                    self.spc_r[: int((len(self.spc_r) + 1) / 2)],
+                    pen=(255, 255, 0),
+                )
             else:
                 self.Sig_r.setData([0], [0])
                 self.Spec_r.setData([0], [0])
-                
-            self.total_conf = self.conf_f+self.conf_l+self.conf_r
-            self.conf_f = self.conf_f/self.total_conf
-            self.conf_l = self.conf_l/self.total_conf
-            self.conf_r = self.conf_r/self.total_conf
-            self.bpm_avg = self.bpm_f*self.conf_f+self.bpm_l * self.conf_l+self.bpm_r*self.conf_r
-            
+
+            self.total_conf = self.conf_f + self.conf_l + self.conf_r
+            self.conf_f = self.conf_f / self.total_conf
+            self.conf_l = self.conf_l / self.total_conf
+            self.conf_r = self.conf_r / self.total_conf
+            self.bpm_avg = (
+                self.bpm_f * self.conf_f
+                + self.bpm_l * self.conf_l
+                + self.bpm_r * self.conf_r
+            )
+
             current_time_hr = time.time()
             elapsed_time_hr = current_time_hr - self.start_time_hr
             if elapsed_time_hr >= 2:
@@ -357,16 +428,43 @@ class Procedure(QMainWindow, ui):
                     {
                         "type": "video.hr",
                         "hr": self.bpm_avg,
-                    }
+                        "bpm_f": str(self.bpm_f),
+                        "bpm_l": str(self.bpm_l),
+                        "bpm_r": str(self.bpm_r),
+                        "conf_f": str(self.conf_f * 100),
+                        "conf_l": str(self.conf_l * 100),
+                        "conf_r": str(self.conf_r * 100),
+                    },
                 )
                 print("bpm ", self.bpm_avg)
+                print("bpm_f ", self.bpm_f)
+                print("bpm_l ", self.bpm_l)
+                print("bpm_r ", self.bpm_r)
+                print("conf_f ", self.conf_f)
+                print("conf_l ", self.conf_l)
+                print("conf_r ", self.conf_r)
+
                 self.start_time_hr = current_time_hr
-            
-            Label_Text = "Fs: \t\t"+str(self.processor.series_class.fps)+"\nFore BPM: \t"+str(
-                self.bpm_f)+"\nFore Confidence: "+str(self.conf_f*100)+"%\nLeft BPM: \t"+str(
-                self.bpm_l)+"\nLeft Confidence: "+str(self.conf_l*100)+"%\nRight BPM:\t"+str(
-                self.bpm_r)+"\nRight Confidence:"+str(self.conf_r*100)+"%\n\nBPM Overall: \t"+str(self.bpm_avg)
-            
+
+            Label_Text = (
+                "Fs: \t\t"
+                + str(self.processor.series_class.fps)
+                + "\nFore BPM: \t"
+                + str(self.bpm_f)
+                + "\nFore Confidence: "
+                + str(self.conf_f * 100)
+                + "%\nLeft BPM: \t"
+                + str(self.bpm_l)
+                + "\nLeft Confidence: "
+                + str(self.conf_l * 100)
+                + "%\nRight BPM:\t"
+                + str(self.bpm_r)
+                + "\nRight Confidence:"
+                + str(self.conf_r * 100)
+                + "%\n\nBPM Overall: \t"
+                + str(self.bpm_avg)
+            )
+
             self.label.setText(Label_Text)
             print(Label_Text)
 
@@ -377,5 +475,6 @@ class Procedure(QMainWindow, ui):
             self.Spec_l.setData([0], [0])
             self.Sig_r.setData([0], [0])
             self.Spec_r.setData([0], [0])
-            self.label.setText("Fs:\t\t"+str(self.processor.series_class.fps)+"\nCollecting...")
-            
+            self.label.setText(
+                "Fs:\t\t" + str(self.processor.series_class.fps) + "\nCollecting..."
+            )

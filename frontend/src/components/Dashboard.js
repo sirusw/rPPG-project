@@ -4,19 +4,36 @@ import React, { useState, useEffect, useRef } from 'react';
 import "../styles/Dashboard.css";
 import { Col, Row, Card } from "antd";
 import { Line } from 'react-chartjs-2';
+import TestChart from "./TestChart";
 
 const Dashboard = ({ socket }) => {
     const [videoSrc, setVideoSrc] = useState("");
     const [error, setError] = useState('No connection');
     const [heartRate, setHeartRate] = useState(0);
     const [heartKey, setHeartKey] = useState(0);
+    const [bpmF, setBpmF] = useState(0);
+    const [bpmL, setBpmL] = useState(0);
+    const [bpmR, setBpmR] = useState(0);
+    const [confF, setConfF] = useState(0);
+    const [confL, setConfL] = useState(0);
+    const [confR, setConfR] = useState(0);
+    const [spF, setSpF] = useState(0);
+    const [spL, setSpL] = useState(0);
+    const [spR, setSpR] = useState(0);
     const frameCount = useRef(0);
     const [frameRate, setFrameRate] = useState(0);
     const timeoutRef = useRef(null);
     const startTimeRef = useRef(null);
+    const [dots, setDots] = useState('');
 
     useEffect(() => {
-        const timeoutDuration = 2000;
+        const interval = setInterval(() => {
+            setDots(prevDots => (prevDots.length < 4 ? prevDots + '.' : ''));
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    useEffect(() => {
 
         if (socket) {
             socket.onopen = () => {
@@ -49,8 +66,19 @@ const Dashboard = ({ socket }) => {
                     }
                 } else if (data.type === 'video.hr') {
                     console.log(data.hr);
-                    setHeartRate(data.hr);
+                    setHeartRate(Number(data.hr));
+                    setBpmF(Number(data.bpm_f));
+                    setBpmL(Number(data.bpm_l));
+                    setBpmR(Number(data.bpm_r));
+                    setConfF(Number(data.conf_f));
+                    setConfL(Number(data.conf_l));
+                    setConfR(Number(data.conf_r));
                     setHeartKey(prevKey => prevKey + 1);
+                    console.log(data.bpm_f, data.bpm_l, data.bpm_r)
+                    console.log(data.conf_f, data.conf_l, data.conf_r)
+                } else if (data.type === 'video.sp') {
+                    console.log(data.spF, data.spL, data.spR)
+                    console.log(typeof data.spF, typeof data.spL, typeof data.spR)
                 }
             };
         }
@@ -112,44 +140,88 @@ const Dashboard = ({ socket }) => {
                         </Card>
                     </Row>
                 </Col>
-                <Col span={12} style={{ height: '100%' }}>
-                    <Row style={{ height: '30%' }}>
+                <Col span={12} style={{ height: '100%', width: '100%'}}>
+                    <Row style={{ height: '40%', width: '100%' }}>
                         <Col span={12} style={{ height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                             <Card style={{ height: '95%', width: '95%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                <h1>{heartRate}</h1>
-                                <div className='heart' key={heartKey} style={{ opacity: 0.8 }}>
-                                    ❤️
+                                {heartRate ? (
+                                    <>
+                                        <h2 style={{fontSize: 55, margin: 0}}>{heartRate.toFixed(0)}</h2>
+                                        <div className='heart' key={heartKey} style={{ opacity: 0.8 }}>
+                                            ❤️
+                                        </div>
+                                    </>
+                                ) : (
+                                    <h2>{`waiting for heart rate${dots}`}</h2>
+                                )}
+                            </Card>
+                        </Col>
+                        <Col span={12} style={{ height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                            <Card style={{ height: '95%', width: '95%', display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0, minWidth: 0 }}>
+                                <div style={{ height: '100%', minWidth: '300px', flexShrink: 0 }}>
+                                    <Row style={{ width: '100%', margin: '0', padding: '0' }}>
+                                        <Col span={12}>
+                                            <h4 style={{ margin: '0', padding: '0' }}>Frame Rate: </h4>
+                                        </Col>
+                                        <Col span={12}>
+                                            <h4 style={{ margin: '0', padding: '0' }}>{frameRate} FPS</h4>
+                                        </Col>
+                                    </Row>
+                                    <Row style={{ width: '100%', margin: '0', padding: '0' }}>
+                                        <Col span={12}>
+                                            <h4 style={{ margin: '0', padding: '0' }}>BPM_F: </h4>
+                                        </Col>
+                                        <Col span={12}>
+                                            <h4 style={{ margin: '0', padding: '0' }}>{bpmF.toFixed(6)}</h4>
+                                        </Col>
+                                    </Row>
+                                    <Row style={{ width: '100%', margin: '0', padding: '0' }}>
+                                        <Col span={12}>
+                                            <h4 style={{ margin: '0', padding: '0' }}>Conf_F: </h4>
+                                        </Col>
+                                        <Col span={12}>
+                                            <h4 style={{ margin: '0', padding: '0' }}>{confF.toFixed(6)}%</h4>
+                                        </Col>
+                                    </Row>
+                                    <Row style={{ width: '100%', margin: '0', padding: '0' }}>
+                                        <Col span={12}>
+                                            <h4 style={{ margin: '0', padding: '0' }}>BPM_L: </h4>
+                                        </Col>
+                                        <Col span={12}>
+                                            <h4 style={{ margin: '0', padding: '0' }}>{bpmL.toFixed(6)}</h4>
+                                        </Col>
+                                    </Row>
+                                    <Row style={{ width: '100%', margin: '0', padding: '0' }}>
+                                        <Col span={12}>
+                                            <h4 style={{ margin: '0', padding: '0' }}>Conf_L: </h4>
+                                        </Col>
+                                        <Col span={12}>
+                                            <h4 style={{ margin: '0', padding: '0' }}>{confL.toFixed(6)}%</h4>
+                                        </Col>
+                                    </Row>
+                                    <Row style={{ width: '100%', margin: '0', padding: '0' }}>
+                                        <Col span={12}>
+                                            <h4 style={{ margin: '0', padding: '0' }}>BPM_R: </h4>
+                                        </Col>
+                                        <Col span={12}>
+                                            <h4 style={{ margin: '0', padding: '0' }}>{bpmR.toFixed(6)}</h4>
+                                        </Col>
+                                    </Row>
+                                    <Row style={{ width: '100%', margin: '0', padding: '0' }}>
+                                        <Col span={12}>
+                                            <h4 style={{ margin: '0', padding: '0' }}>Conf_R: </h4>
+                                        </Col>
+                                        <Col span={12}>
+                                            <h4 style={{ margin: '0', padding: '0' }}>{confR.toFixed(6)}%</h4>
+                                        </Col>
+                                    </Row>
                                 </div>
                             </Card>
                         </Col>
-                        <Col span={12} style={{ height: '100%', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                            <div style={{ width: '95%', height: '95%', justifyContent: 'center', alignItems: 'center', display: 'flex' }}>
-                                <Card style={{ width: '100%', height: '100%' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', height: '100%', width: '100%' }}>
-                                        <Row style={{ width: '100%' }}>
-                                            <Col span={12}>
-                                                <h3>Frame Rate: </h3>
-                                            </Col>
-                                            <Col span={12}>
-                                                <h3>{frameRate} FPS</h3>
-                                            </Col>
-                                        </Row>
-                                        <Row style={{ width: '100%' }}>
-                                            <Col span={12}>
-                                                <h3>Latency:</h3>
-                                            </Col>
-                                            <Col span={12}>
-                                                <h3>0 ms</h3>
-                                            </Col>
-                                        </Row>
-                                    </div>
-                                </Card>
-                            </div>
-                        </Col>
                     </Row>
-                    <Row style={{ height: '70%', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+                    <Row style={{ height: '60%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                         <Card style={{ height: '98%', width: '98%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                            <Row justify="center" align="middle" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+                            <Row justify="center" align="middle" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                                 <Col span={24}>
                                     <Row justify="center" gutter={[16, 16]}>
                                         <Col span={24}>
