@@ -18,7 +18,26 @@ Here are the steps to set up this project:
 
 Please note that the WiFi manager configuration may fail on the first attempt, causing the AP to restart. If this happens, repeat the above steps.
 
+## Deploy
+英语不好先用中文，之后帮我翻译成英文
+除了Arduino部分外，其他部分都是在Ubuntu虚拟机上容器化部署。
+原理是运行docker-compose编排文件时，它会自动构建镜像，然后运行镜像。
 
+1、安装docker和docker-compose
+sudo apt update
+sudo apt install docker.io
+2、为了日后方便，可以设置docker服务开机自启
+sudo systemctl start docker
+sudo systemctl enable docker
+3、安装docker-compose
+sudo curl -L "https://github.com/docker/compose/releases/download/v2.6.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+#验证 Docker Compose 是否正确安装，成功会显示出安装的 Docker Compose 版本。
+docker-compose --version 
+4、把Docker Compose 会在后台启动服务，并且命令行不会被挂起显示容器的输出信息。
+docker-compose up -d
+5、停止rPPG系统
+docker-compose down -v
 
 ## Contacts
 
