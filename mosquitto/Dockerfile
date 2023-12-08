@@ -5,7 +5,7 @@ FROM eclipse-mosquitto
 COPY ./mosquitto.conf /mosquitto/config/mosquitto.conf
 
 # 暴露 MQTT 默认端口
-EXPOSE 1883
+EXPOSE 18839 9001
 
 # 运行 Mosquitto
 CMD ["mosquitto", "-c", "/mosquitto/config/mosquitto.conf"]
