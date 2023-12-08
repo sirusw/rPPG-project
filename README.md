@@ -23,6 +23,10 @@ Please note that the WiFi manager configuration may fail on the first attempt, c
 除了Arduino部分外，其他部分都是在Ubuntu虚拟机上容器化部署。
 原理是运行docker-compose编排文件时，它会自动构建镜像，然后运行镜像。
 
+-1、在虚拟机上拉取项目
+
+git clone https://github.com/sirusw/rPPG-project.git
+
 0、请确保虚拟机的防火墙关了，因为很碍事。
 
 sudo ufw disable
@@ -50,6 +54,8 @@ sudo chmod +x /usr/local/bin/docker-compose
 docker-compose --version 
 
 4、把Docker Compose 会在后台启动服务，并且命令行不会被挂起显示容器的输出信息。
+
+cd <rPPG-project的目录>
 
 docker-compose up -f ./docker-compose.yml -d
 
