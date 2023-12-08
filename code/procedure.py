@@ -285,9 +285,18 @@ class Procedure(QMainWindow, ui):
         Hist_r_r_data_x, Hist_r_r_data_y = self.Hist_r_r.getData()
         Hist_r_g_data_x, Hist_r_g_data_y = self.Hist_r_g.getData()
         Hist_r_b_data_x, Hist_r_b_data_y = self.Hist_r_b.getData()
+        
+        histExists = True
+
+        if any(var is None for var in [Hist_f_r_data_x, Hist_f_r_data_y, Hist_f_g_data_x, Hist_f_g_data_y, Hist_f_b_data_x, Hist_f_b_data_y, Hist_l_r_data_x, Hist_l_r_data_y, Hist_l_g_data_x, Hist_l_g_data_y, Hist_l_b_data_x, Hist_l_b_data_y, Hist_r_r_data_x, Hist_r_r_data_y, Hist_r_g_data_x, Hist_r_g_data_y, Hist_r_b_data_x, Hist_r_b_data_y]):
+            histExists = False
+        
         current_time_sp = time.time()
         elapsed_time_sp = current_time_sp - self.start_time_sp
-        if elapsed_time_sp >= 2:
+        print("Hist_f_r_data_x")
+        print(Hist_f_r_data_x.tolist())
+        print(Hist_f_r_data_y.tolist())
+        if elapsed_time_sp >= 0.5 and histExists:
             async_to_sync(self.channel_layer.group_send)(
                 "video",
                 {

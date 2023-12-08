@@ -3,8 +3,8 @@ import MQTTVideo from "./MQTTVideo";
 import React, { useState, useEffect, useRef } from 'react';
 import "../styles/Dashboard.css";
 import { Col, Row, Card } from "antd";
-import { Line } from 'react-chartjs-2';
-import TestChart from "./TestChart";
+import SignalPlot from "./SignalPlot";
+import { set } from "lodash";
 
 const Dashboard = ({ socket }) => {
     const [videoSrc, setVideoSrc] = useState("");
@@ -17,9 +17,10 @@ const Dashboard = ({ socket }) => {
     const [confF, setConfF] = useState(0);
     const [confL, setConfL] = useState(0);
     const [confR, setConfR] = useState(0);
-    const [spF, setSpF] = useState(0);
-    const [spL, setSpL] = useState(0);
-    const [spR, setSpR] = useState(0);
+    const [spF, setSpF] = useState([]);
+    const [spL, setSpL] = useState([]);
+    const [spR, setSpR] = useState([]);
+    const [spTotal, setSpTotal] = useState([]);
     const frameCount = useRef(0);
     const [frameRate, setFrameRate] = useState(0);
     const timeoutRef = useRef(null);
@@ -77,8 +78,10 @@ const Dashboard = ({ socket }) => {
                     console.log(data.bpm_f, data.bpm_l, data.bpm_r)
                     console.log(data.conf_f, data.conf_l, data.conf_r)
                 } else if (data.type === 'video.sp') {
-                    console.log(data.spF, data.spL, data.spR)
-                    console.log(typeof data.spF, typeof data.spL, typeof data.spR)
+                    setSpF(data.sp_f);
+                    setSpL(data.sp_l);
+                    setSpR(data.sp_r);
+                    
                 }
             };
         }
@@ -140,13 +143,13 @@ const Dashboard = ({ socket }) => {
                         </Card>
                     </Row>
                 </Col>
-                <Col span={12} style={{ height: '100%', width: '100%'}}>
+                <Col span={12} style={{ height: '100%', width: '100%' }}>
                     <Row style={{ height: '40%', width: '100%' }}>
                         <Col span={12} style={{ height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                             <Card style={{ height: '95%', width: '95%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                                 {heartRate ? (
                                     <>
-                                        <h2 style={{fontSize: 55, margin: 0}}>{heartRate.toFixed(0)}</h2>
+                                        <h2 style={{ fontSize: 55, margin: 0 }}>{heartRate.toFixed(0)}</h2>
                                         <div className='heart' key={heartKey} style={{ opacity: 0.8 }}>
                                             ❤️
                                         </div>
@@ -219,98 +222,38 @@ const Dashboard = ({ socket }) => {
                             </Card>
                         </Col>
                     </Row>
-                    <Row style={{ height: '60%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                        <Card style={{ height: '98%', width: '98%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                            <Row justify="center" align="middle" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                <Col span={24}>
-                                    <Row justify="center" gutter={[16, 16]}>
-                                        <Col span={24}>
-                                            <div style={{ width: '100%' }}>
-                                                <Line
-                                                    data={{
-                                                        labels: ['January', 'February', 'March', 'April', 'May'],
-                                                        datasets: [
-                                                            {
-                                                                label: 'Data 1',
-                                                                data: [12, 19, 3, 5, 2],
-                                                                fill: false,
-                                                                borderColor: 'rgb(255, 99, 132)',
-                                                            },
-                                                        ],
-                                                    }}
-                                                    options={{
-                                                        responsive: true,
-                                                        maintainAspectRatio: false,
-                                                        scales: {
-                                                            y: {
-                                                                beginAtZero: true,
-                                                            },
-                                                        },
-                                                    }}
-                                                />
-                                            </div>
-                                        </Col>
-                                    </Row>
-                                    <Row justify="center" gutter={[16, 16]}>
-                                        <Col span={24}>
-                                            <div style={{ width: '100%' }}>
-                                                <Line
-                                                    data={{
-                                                        labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple'],
-                                                        datasets: [
-                                                            {
-                                                                label: 'Data 2',
-                                                                data: [5, 10, 15, 20, 25],
-                                                                fill: false,
-                                                                borderColor: 'rgb(54, 162, 235)',
-                                                            },
-                                                        ],
-                                                    }}
-                                                    options={{
-                                                        responsive: true,
-                                                        maintainAspectRatio: false,
-                                                        scales: {
-                                                            y: {
-                                                                beginAtZero: true,
-                                                            },
-                                                        },
-                                                    }}
-                                                />
-                                            </div>
-                                        </Col>
-                                    </Row>
-                                    <Row justify="center" gutter={[16, 16]}>
-                                        <Col span={24}>
-                                            <div style={{ width: '100%' }}>
-                                                <Line
-                                                    data={{
-                                                        labels: ['One', 'Two', 'Three', 'Four', 'Five'],
-                                                        datasets: [
-                                                            {
-                                                                label: 'Data 3',
-                                                                data: [7, 14, 21, 28, 35],
-                                                                fill: false,
-                                                                borderColor: 'rgb(75, 192, 192)',
-                                                            },
-                                                        ],
-                                                    }}
-                                                    options={{
-                                                        responsive: true,
-                                                        maintainAspectRatio: false,
-                                                        scales: {
-                                                            y: {
-                                                                beginAtZero: true,
-                                                            },
-                                                        },
-                                                    }}
-                                                />
-                                            </div>
-                                        </Col>
-                                    </Row>
-                                </Col>
-                            </Row>
+                    <Row style={{ height: '60%', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <Card style={{ height: '98%', width: '98%' }}>
+                            <div style={{ height: '100%' }}>
+                                <Row style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', width: '100%' }}>
+                                    <Col span={24} style={{ height: '100%' }}>
+                                        <Row style={{ height: '100%' }}>
+                                            <Col span={24}>
+                                                <div style={{ width: '100%' }} >
+                                                    <SignalPlot data={spF} title="Combined" />
+                                                </div>
+                                            </Col>
+                                        </Row>
+                                        {/* <Row style={{ height: '33%' }}>
+                                            <Col span={24}>
+                                                <div style={{ width: '100%' }}>
+                                                    <SignalPlot data={spL} title="Left" />
+                                                </div>
+                                            </Col>
+                                        </Row>
+                                        <Row style={{ height: '33%' }}>
+                                            <Col span={24}>
+                                                <div style={{ width: '100%' }}>
+                                                    <SignalPlot data={spR} title="Right" />
+                                                </div>
+                                            </Col>
+                                        </Row> */}
+                                    </Col>
+                                </Row>
+                            </div>
                         </Card>
                     </Row>
+
                 </Col>
             </Row>
         </div>
