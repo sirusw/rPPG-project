@@ -285,6 +285,7 @@ class Procedure(QMainWindow, ui):
         Hist_r_r_data_x, Hist_r_r_data_y = self.Hist_r_r.getData()
         Hist_r_g_data_x, Hist_r_g_data_y = self.Hist_r_g.getData()
         Hist_r_b_data_x, Hist_r_b_data_y = self.Hist_r_b.getData()
+
         current_time_sp = time.time()
         elapsed_time_sp = current_time_sp - self.start_time_sp
         if elapsed_time_sp >= 2:
