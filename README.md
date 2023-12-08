@@ -51,7 +51,7 @@ docker-compose --version
 
 4、把Docker Compose 会在后台启动服务，并且命令行不会被挂起显示容器的输出信息。
 
-docker-compose up -d
+docker-compose up -f ./docker-compose.yml -d
 
 5、停止rPPG系统
 
