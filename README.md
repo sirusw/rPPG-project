@@ -23,6 +23,10 @@ Please note that the WiFi manager configuration may fail on the first attempt, c
 除了Arduino部分外，其他部分都是在Ubuntu虚拟机上容器化部署。
 原理是运行docker-compose编排文件时，它会自动构建镜像，然后运行镜像。
 
+0、请确保虚拟机的防火墙关了，因为很碍事。
+
+sudo ufw disable
+
 1、安装docker和docker-compose
 
 sudo apt update
@@ -52,6 +56,11 @@ docker-compose up -d
 5、停止rPPG系统
 
 docker-compose down -v
+
+ps：如果系统感觉不通，可以用在本地CMD中telnet自己虚拟机的端口排查
+
+telnet  <虚拟机ip>  <port>
+
 
 ## Contacts
 
