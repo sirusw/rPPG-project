@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - mqtt
+    environment:
+      - REDIS_HOST=redis
+      - MQTT_HOST=mqtt
+
+  redis:
+    image: "redis:latest"
+    ports:
+      - "6379:6379"
+
+  mqtt:
+    image: "eclipse-mosquitto"
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  script:
+    build:
+      context: ./code
+      dockerfile: Dockerfile
+    depends_on:
+      - backend
