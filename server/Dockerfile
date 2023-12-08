@@ -4,6 +4,7 @@ FROM python:3.10
 # 设置工作目录
 WORKDIR /app
 
+EXPOSE 8000
 # 复制 Python 依赖文件并安装依赖
 COPY ./requirements.txt ./
 RUN pip install -r requirements.txt
@@ -16,3 +17,5 @@ RUN chmod +x ./start.sh
 
 # 设置容器启动时执行的命令
 CMD ["./start.sh"]
+
+
