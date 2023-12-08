@@ -1,9 +1,16 @@
 asgiref==3.6.0
 channels==4.0.0
 Django==4.2
+dlib==19.24.1
+matplotlib==3.7.1
 numpy==1.23.5
+obspy==1.4.0
 opencv_contrib_python==4.7.0.68
 opencv_python==4.8.1.78
 opencv_python_headless==4.8.1.78
 paho_mqtt==1.6.1
-redis==5.0.1
+PyQt5==5.15.10
+PyQt5_sip==12.13.0
+pyqtgraph==0.13.3
+scipy==1.11.4
+seaborn==0.13.0
