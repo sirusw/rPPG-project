@@ -19,7 +19,6 @@ Here are the steps to set up this project:
 Please note that the WiFi manager configuration may fail on the first attempt, causing the AP to restart. If this happens, repeat the above steps.
 
 ## Deploy
-英语不好先用中文，之后帮我翻译成英文
 除了Arduino部分外，其他部分都是在Ubuntu虚拟机上容器化部署。
 原理是运行docker-compose编排文件时，它会自动构建镜像，然后运行镜像。
 
